@@ -38,24 +38,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>ClangCL</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
-    <VCToolsVersion>14.36.32532</VCToolsVersion>
+    <VCToolsVersion>
+    </VCToolsVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>ClangCL</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
-    <VCToolsVersion>14.36.32532</VCToolsVersion>
+    <VCToolsVersion>
+    </VCToolsVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <WindowsAppContainer>false</WindowsAppContainer>
     <CharacterSet>Unicode</CharacterSet>
@@ -63,18 +65,19 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release (clang)|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>ClangCL</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <WindowsAppContainer>false</WindowsAppContainer>
     <CharacterSet>Unicode</CharacterSet>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
-    <VCToolsVersion>14.36.32532</VCToolsVersion>
+    <VCToolsVersion>
+    </VCToolsVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <WindowsAppContainer>false</WindowsAppContainer>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
   </PropertyGroup>
@@ -82,10 +85,11 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <WindowsAppContainer>false</WindowsAppContainer>
-    <PlatformToolset>ClangCL</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
-    <VCToolsVersion>14.36.32532</VCToolsVersion>
+    <VCToolsVersion>
+    </VCToolsVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -113,7 +117,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\depends\include;$(UniversalCRT_IncludePath);$(SolutionDir)packages\Tobii.StreamEngine.Native.2.2.2.363\build\native\include\</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\depends\include;$(UniversalCRT_IncludePath);$(SolutionDir)packages\Tobii.StreamEngine.Native.2.2.2.363\build\native\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;$(SolutionDir)\depends\lib</LibraryPath>
     <OutDir>C:\Program Files (x86)\Steam\steamapps\common\Special K\</OutDir>
     <CodeAnalysisRuleSet>SpecialK.ruleset</CodeAnalysisRuleSet>
@@ -125,7 +129,7 @@
     <TargetName>SpecialK64</TargetName>
     <OutDir>C:\Program Files (x86)\Steam\steamapps\common\Special K\</OutDir>
     <IntDir>C:\Users\amcol\Documents\My Mods\SpecialK\x64</IntDir>
-    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\depends\include;$(SolutionDir)\depends\build\x64;C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include;$(SolutionDir)include\SpecialK;$(UniversalCRT_IncludePath);$(SolutionDir)packages\Tobii.StreamEngine.Native.2.2.2.363\build\native\include\</IncludePath>
+    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\depends\include;$(SolutionDir)\depends\build\x64;C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include;$(SolutionDir)include\SpecialK;$(UniversalCRT_IncludePath);$(SolutionDir)packages\Tobii.StreamEngine.Native.2.2.2.363\build\native\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)\depends\lib\CEGUI\x64;$(SolutionDir)\depends\lib;C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x64</LibraryPath>
     <CodeAnalysisRuleSet>SpecialK.ruleset</CodeAnalysisRuleSet>
     <MultiProcFXC>true</MultiProcFXC>
@@ -135,7 +139,7 @@
     <OutDir>$(USERPROFILE)\Documents\My Mods\SpecialK\</OutDir>
     <CodeAnalysisRuleSet>SpecialK.ruleset</CodeAnalysisRuleSet>
     <TargetName>SpecialK32</TargetName>
-    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\depends\include;$(SolutionDir)\depends\build\Win32;C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include;$(SolutionDir)include\SpecialK;$(UniversalCRT_IncludePath);$(SolutionDir)packages\Tobii.StreamEngine.Native.2.2.2.363\build\native\include\</IncludePath>
+    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\depends\include;$(SolutionDir)\depends\build\Win32;C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include;$(SolutionDir)include\SpecialK;$(UniversalCRT_IncludePath);$(SolutionDir)packages\Tobii.StreamEngine.Native.2.2.2.363\build\native\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;$(SolutionDir)\depends\lib;C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x86</LibraryPath>
     <IntDir>$(SolutionDir)build\$(Configuration)\Win32\</IntDir>
     <EnableCppCoreCheck>true</EnableCppCoreCheck>
@@ -149,7 +153,7 @@
     <OutDir>$(USERPROFILE)\Documents\My Mods\SpecialK\</OutDir>
     <CodeAnalysisRuleSet>SpecialK.ruleset</CodeAnalysisRuleSet>
     <TargetName>SpecialK32</TargetName>
-    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\depends\include;$(SolutionDir)\depends\build\Win32;C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include;$(SolutionDir)include\SpecialK;$(UniversalCRT_IncludePath);$(SolutionDir)packages\Tobii.StreamEngine.Native.2.2.2.363\build\native\include\</IncludePath>
+    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\depends\include;$(SolutionDir)\depends\build\Win32;C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include;$(SolutionDir)include\SpecialK;$(UniversalCRT_IncludePath);$(SolutionDir)packages\Tobii.StreamEngine.Native.2.2.2.363\build\native\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;$(SolutionDir)\depends\lib;C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x86</LibraryPath>
     <IntDir>$(SolutionDir)build\$(Configuration)\Win32\</IntDir>
     <EnableCppCoreCheck>true</EnableCppCoreCheck>
@@ -162,7 +166,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>SpecialK64</TargetName>
     <OutDir>$(USERPROFILE)\Documents\My Mods\SpecialK\</OutDir>
-    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\depends\include;$(SolutionDir)\depends\build\x64;C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include;$(SolutionDir)include\SpecialK;$(WindowsSdk_71A_IncludePath);$(UniversalCRT_IncludePath);C:\Program Files (x86)\Windows Kits\10\Include\10.0.18323.0\um;C:\Program Files (x86)\Windows Kits\10\Include\10.0.18323.0\ucrt;$(SolutionDir)packages\Tobii.StreamEngine.Native.2.2.2.363\build\native\include\</IncludePath>
+    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\depends\include;$(SolutionDir)\depends\build\x64;C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include;$(SolutionDir)include\SpecialK;$(WindowsSdk_71A_IncludePath);$(UniversalCRT_IncludePath);C:\Program Files (x86)\Windows Kits\10\Include\10.0.18323.0\um;C:\Program Files (x86)\Windows Kits\10\Include\10.0.18323.0\ucrt;$(SolutionDir)packages\Tobii.StreamEngine.Native.2.2.2.363\build\native\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)\depends\lib;C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x64;$(WindowsSdk_71A_LibraryPath_x64)</LibraryPath>
     <CodeAnalysisRuleSet>SpecialK.ruleset</CodeAnalysisRuleSet>
     <EnableCppCoreCheck>true</EnableCppCoreCheck>
@@ -176,7 +180,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release (clang)|x64'">
     <TargetName>SpecialK64</TargetName>
     <OutDir>$(USERPROFILE)\Documents\My Mods\SpecialK\</OutDir>
-    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\depends\include;$(SolutionDir)\depends\build\x64;C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include;$(SolutionDir)include\SpecialK;$(WindowsSdk_71A_IncludePath);$(UniversalCRT_IncludePath);C:\Program Files (x86)\Windows Kits\10\Include\10.0.18323.0\um;C:\Program Files (x86)\Windows Kits\10\Include\10.0.18323.0\ucrt;$(SolutionDir)packages\Tobii.StreamEngine.Native.2.2.2.363\build\native\include\</IncludePath>
+    <IncludePath>$(SolutionDir)include;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)\depends\include;$(SolutionDir)\depends\build\x64;C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Include;$(SolutionDir)include\SpecialK;$(WindowsSdk_71A_IncludePath);$(UniversalCRT_IncludePath);C:\Program Files (x86)\Windows Kits\10\Include\10.0.18323.0\um;C:\Program Files (x86)\Windows Kits\10\Include\10.0.18323.0\ucrt;$(SolutionDir)packages\Tobii.StreamEngine.Native.2.2.2.363\build\native\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)\depends\lib;C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\Lib\x64;$(WindowsSdk_71A_LibraryPath_x64)</LibraryPath>
     <CodeAnalysisRuleSet>SpecialK.ruleset</CodeAnalysisRuleSet>
     <EnableCppCoreCheck>true</EnableCppCoreCheck>
@@ -239,6 +243,7 @@
       <UseFullPaths>false</UseFullPaths>
       <GuardEHContMetadata>false</GuardEHContMetadata>
       <CreateHotpatchableImage>true</CreateHotpatchableImage>
+      <AdditionalIncludeDirectories>;C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -273,6 +278,7 @@
       <StackReserveSize>0x800000</StackReserveSize>
       <StackCommitSize>0x10000</StackCommitSize>
       <CreateHotPatchableImage>X86Image</CreateHotPatchableImage>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\ucrt\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
     <Manifest>
@@ -316,8 +322,7 @@ if exist "$(TargetDir)$(TargetName).exp" ( del "$(TargetDir)$(TargetName).exp" )
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <ControlFlowGuard>false</ControlFlowGuard>
-      <AdditionalIncludeDirectories>
-      </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>;C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt</AdditionalIncludeDirectories>
       <EnforceTypeConversionRules>true</EnforceTypeConversionRules>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <SmallerTypeCheck>false</SmallerTypeCheck>
@@ -390,6 +395,7 @@ if exist "$(TargetDir)$(TargetName).exp" ( del "$(TargetDir)$(TargetName).exp" )
       <StackReserveSize>0x800000</StackReserveSize>
       <StackCommitSize>0x10000</StackCommitSize>
       <CreateHotPatchableImage>X64Image</CreateHotPatchableImage>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\ucrt\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
     <ResourceCompile>
@@ -433,7 +439,7 @@ if exist "$(TargetDir)$(TargetName).exp" ( del "$(TargetDir)$(TargetName).exp" )
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnablePREfast>false</EnablePREfast>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
-      <AdditionalIncludeDirectories>$(SolutionDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include;C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>4201;4702;4061</DisableSpecificWarnings>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -501,6 +507,7 @@ if exist "$(TargetDir)$(TargetName).exp" ( del "$(TargetDir)$(TargetName).exp" )
       <CreateHotPatchableImage>X86Image</CreateHotPatchableImage>
       <TurnOffAssemblyGeneration>true</TurnOffAssemblyGeneration>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\ucrt\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
     <PostBuildEvent>
@@ -550,7 +557,7 @@ if exist "$(TargetDir)$(TargetName).exp" ( del "$(TargetDir)$(TargetName).exp" )
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnablePREfast>false</EnablePREfast>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
-      <AdditionalIncludeDirectories>$(SolutionDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include;C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>4201;4702;4061</DisableSpecificWarnings>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -615,6 +622,7 @@ if exist "$(TargetDir)$(TargetName).exp" ( del "$(TargetDir)$(TargetName).exp" )
       <StackCommitSize>0x10000</StackCommitSize>
       <CreateHotPatchableImage>ItaniumImage</CreateHotPatchableImage>
       <TurnOffAssemblyGeneration>true</TurnOffAssemblyGeneration>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\ucrt\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ProjectReference />
     <PostBuildEvent>
@@ -689,6 +697,7 @@ if exist "$(TargetDir)$(TargetName).exp" ( del "$(TargetDir)$(TargetName).exp" )
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <IntelJCCErratum>true</IntelJCCErratum>
+      <AdditionalIncludeDirectories>;C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -703,8 +712,7 @@ if exist "$(TargetDir)$(TargetName).exp" ( del "$(TargetDir)$(TargetName).exp" )
       </EntryPointSymbol>
       <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;psapi.lib;legacy_stdio_definitions.lib;mmdevapi.lib;%(AdditionalDependencies);imm32.lib;wininet.lib;tdh.lib;userenv.lib;comctl32.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>
-      </AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\ucrt\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImportLibrary />
       <SetChecksum>true</SetChecksum>
       <BaseAddress>
@@ -809,6 +817,7 @@ if exist "$(TargetDir)$(TargetName).exp" ( del "$(TargetDir)$(TargetName).exp" )
       <SDLCheck>false</SDLCheck>
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>;C:\Program Files (x86)\Windows Kits\10\include\10.0.26100.0\ucrt</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -823,8 +832,7 @@ if exist "$(TargetDir)$(TargetName).exp" ( del "$(TargetDir)$(TargetName).exp" )
       </EntryPointSymbol>
       <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;psapi.lib;legacy_stdio_definitions.lib;mmdevapi.lib;%(AdditionalDependencies);imm32.lib;wininet.lib;tdh.lib;userenv.lib;comctl32.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>
-      </AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\ucrt\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImportLibrary>
       </ImportLibrary>
       <SetChecksum>true</SetChecksum>
