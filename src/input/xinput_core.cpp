@@ -553,7 +553,12 @@ XInputGetState1_4_Detour (
       InterlockedExchange (&last_native_time   [0], SK_QueryPerf ().QuadPart);
     }
 
-    SK_XInput_ApplyDeadzone (pState, config.input.gamepad.xinput.deadzone);
+    SK_XInput_ApplyDeadzone (pState, config.input.gamepad.xinput.deadzone,
+                             config.input.gamepad.xinput.deadzone_elimination_l,
+                             config.input.gamepad.xinput.deadzone_elimination_r,
+                             config.input.gamepad.xinput.deadzone_elimination_real_deadzone_l,
+                             config.input.gamepad.xinput.deadzone_elimination_real_deadzone_r,
+                             config.input.gamepad.xinput.deadzone_elimination_enabled);
 
     native_state = *pState;
   }
@@ -914,7 +919,12 @@ XInputGetStateEx1_4_Detour (
       InterlockedExchange (&last_native_time   [0], SK_QueryPerf ().QuadPart);
     }
 
-    SK_XInput_ApplyDeadzone ((XINPUT_STATE *)pState, config.input.gamepad.xinput.deadzone);
+    SK_XInput_ApplyDeadzone ((XINPUT_STATE *)pState, config.input.gamepad.xinput.deadzone,
+                             config.input.gamepad.xinput.deadzone_elimination_l,
+                             config.input.gamepad.xinput.deadzone_elimination_r,
+                             config.input.gamepad.xinput.deadzone_elimination_real_deadzone_l,
+                             config.input.gamepad.xinput.deadzone_elimination_real_deadzone_r,
+                             config.input.gamepad.xinput.deadzone_elimination_enabled);
   }
 
   if (config.input.gamepad.xinput.emulate && (! config.input.gamepad.xinput.blackout_api))
@@ -3888,14 +3898,60 @@ SK_XInput_GetProcAddress (HMODULE hModule, PCSTR lpFuncName, LPCVOID/*pCaller*/)
 }
 
 void
-SK_XInput_ApplyDeadzone (XINPUT_STATE* state, float deadzone_percent)
+SK_XInput_ApplyDeadzone (XINPUT_STATE* state, float deadzone_percent, int deadzone_elimination_l, int deadzone_elimination_r, int real_deadzone_l, int real_deadzone_r, bool elimination_enabled)
 {
-  auto ApplyDeadzoneToStick = [&](SHORT& X, SHORT& Y, float deadzone_percent)
+  auto ApplyDeadzoneToStick = [&](SHORT& X, SHORT& Y, float deadzone_percent, int deadzone_elimination, int real_deadzone)
   {
     const float fX   = X;
     const float fY   = Y;
           float norm = sqrt ( fX*fX + fY*fY );
           float unit = 1.0f;
+
+    // Apply circular real deadzone (if elimination is enabled)
+    // If stick magnitude (distance from center) is below threshold, zero both axes
+    if (elimination_enabled && real_deadzone > 0 && real_deadzone < 32767)
+    {
+      const float real_deadzone_f = static_cast<float>(real_deadzone);
+
+      if (norm < real_deadzone_f)
+      {
+        X = 0;
+        Y = 0;
+        return;
+      }
+    }
+
+    // Apply circular deadzone elimination (removes hardcoded game deadzones)
+    // Compresses stick magnitude from [0, 32767] to [deadzone_elimination, 32767]
+    // while preserving stick angle/direction for uniform sensitivity across all angles
+    if (elimination_enabled && deadzone_elimination > 0 && deadzone_elimination < 32767 && (X != 0 || Y != 0))
+    {
+      const float deadzone_elim_f = static_cast<float>(deadzone_elimination);
+
+      if (norm > 0.0f)
+      {
+        // Calculate unit direction vector (preserves angle)
+        const float dir_x = static_cast<float>(X) / norm;
+        const float dir_y = static_cast<float>(Y) / norm;
+
+        // Compress magnitude: map [0, 32767] -> [deadzone_elimination, 32767]
+        // output_magnitude = (input_magnitude / 32767) * (32767 - threshold) + threshold
+        const float compression_scale = (32767.0f - deadzone_elim_f) / 32767.0f;
+        const float new_magnitude = (norm * compression_scale) + deadzone_elim_f;
+
+        // Apply compressed magnitude to direction vector
+        const float adjusted_fX = dir_x * new_magnitude;
+        const float adjusted_fY = dir_y * new_magnitude;
+
+        // Update X and Y with clamping to valid ranges
+        X = static_cast <SHORT> (adjusted_fX < 0 ? std::max (-32768.0f, std::min (    0.0f, adjusted_fX))
+                                                 : std::max (     0.0f, std::min (32767.0f, adjusted_fX)));
+        Y = static_cast <SHORT> (adjusted_fY < 0 ? std::max (-32768.0f, std::min (    0.0f, adjusted_fY))
+                                                 : std::max (     0.0f, std::min (32767.0f, adjusted_fY)));
+
+        norm = new_magnitude;
+      }
+    }
 
     const auto fUserDeadzone =
       (deadzone_percent / 100.0f) * 32767.0f;
@@ -3920,8 +3976,8 @@ SK_XInput_ApplyDeadzone (XINPUT_STATE* state, float deadzone_percent)
       unit = 0.0f;
     }
 
-    const float ufX = (fX / 32767.0f) * unit;
-    const float ufY = (fY / 32767.0f) * unit;
+    const float ufX = (static_cast<float>(X) / 32767.0f) * unit;
+    const float ufY = (static_cast<float>(Y) / 32767.0f) * unit;
 
     X = static_cast <SHORT> (ufX < 0 ? std::max (-32768.0f, std::min (    0.0f, 32768.0f * ufX))
                                      : std::max (     0.0f, std::min (32767.0f, 32767.0f * ufX)));
@@ -3929,6 +3985,6 @@ SK_XInput_ApplyDeadzone (XINPUT_STATE* state, float deadzone_percent)
                                      : std::max (     0.0f, std::min (32767.0f, 32767.0f * ufY)));
   };
 
-  ApplyDeadzoneToStick (state->Gamepad.sThumbLX, state->Gamepad.sThumbLY, deadzone_percent);
-  ApplyDeadzoneToStick (state->Gamepad.sThumbRX, state->Gamepad.sThumbRY, deadzone_percent);
+  ApplyDeadzoneToStick (state->Gamepad.sThumbLX, state->Gamepad.sThumbLY, deadzone_percent, deadzone_elimination_l, real_deadzone_l);
+  ApplyDeadzoneToStick (state->Gamepad.sThumbRX, state->Gamepad.sThumbRY, deadzone_percent, deadzone_elimination_r, real_deadzone_r);
 }
