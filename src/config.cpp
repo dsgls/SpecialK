@@ -1176,6 +1176,11 @@ struct {
       sk::ParameterBool*  blackout_api            = nullptr;
       sk::ParameterBool*  emulate                 = nullptr;
       sk::ParameterFloat* deadzone                = nullptr;
+      sk::ParameterBool*  deadzone_elimination_enabled = nullptr;
+      sk::ParameterInt*   deadzone_elimination_l  = nullptr;
+      sk::ParameterInt*   deadzone_elimination_r  = nullptr;
+      sk::ParameterInt*   deadzone_elimination_real_deadzone_l = nullptr;
+      sk::ParameterInt*   deadzone_elimination_real_deadzone_r = nullptr;
       sk::ParameterBool*  invert_lx               = nullptr;
       sk::ParameterBool*  invert_ly               = nullptr;
       sk::ParameterBool*  invert_rx               = nullptr;
@@ -1902,6 +1907,11 @@ auto DeclKeybind =
                                                          L"supports native SONY input and XInput.",                    dll_ini,         L"Input.XInput",          L"HideAllDevices"),
     ConfigEntry (input.gamepad.xinput.emulate,           L"For non-Xbox controllers, translate HID to XInput",         dll_ini,         L"Input.XInput",          L"EnableEmulation"),
     ConfigEntry (input.gamepad.xinput.deadzone,          L"In HID->XInput, filter analog values below this threshold", dll_ini,         L"Input.XInput",          L"DeadzonePercent"),
+    ConfigEntry (input.gamepad.xinput.deadzone_elimination_enabled, L"Enable deadzone elimination feature",              dll_ini,         L"Input.XInput",          L"DeadzoneEliminationEnabled"),
+    ConfigEntry (input.gamepad.xinput.deadzone_elimination_l, L"Eliminate hardcoded deadzone on left stick (0-32767)",  dll_ini,         L"Input.XInput",          L"DeadzoneEliminationL"),
+    ConfigEntry (input.gamepad.xinput.deadzone_elimination_r, L"Eliminate hardcoded deadzone on right stick (0-32767)", dll_ini,         L"Input.XInput",          L"DeadzoneEliminationR"),
+    ConfigEntry (input.gamepad.xinput.deadzone_elimination_real_deadzone_l, L"Real deadzone for left stick applied before elimination (0-32767)", dll_ini, L"Input.XInput", L"DeadzoneEliminationRealDeadzoneL"),
+    ConfigEntry (input.gamepad.xinput.deadzone_elimination_real_deadzone_r, L"Real deadzone for right stick applied before elimination (0-32767)", dll_ini, L"Input.XInput", L"DeadzoneEliminationRealDeadzoneR"),
     ConfigEntry (input.gamepad.xinput.invert_lx,         L"Invert the X-Axis on the Left Analog Stick",                dll_ini,         L"Input.XInput",          L"InvertLX"),
     ConfigEntry (input.gamepad.xinput.invert_ly,         L"Invert the Y-Axis on the Left Analog Stick",                dll_ini,         L"Input.XInput",          L"InvertLY"),
     ConfigEntry (input.gamepad.xinput.invert_rx,         L"Invert the X-Axis on the Right Analog Stick",               dll_ini,         L"Input.XInput",          L"InvertRX"),
@@ -5345,6 +5355,11 @@ auto DeclKeybind =
   input.gamepad.xinput.blackout_api->load      (config.input.gamepad.xinput.blackout_api);
   input.gamepad.xinput.emulate->load           (config.input.gamepad.xinput.emulate);
   input.gamepad.xinput.deadzone->load          (config.input.gamepad.xinput.deadzone);
+  input.gamepad.xinput.deadzone_elimination_enabled->load (config.input.gamepad.xinput.deadzone_elimination_enabled);
+  input.gamepad.xinput.deadzone_elimination_l->load (config.input.gamepad.xinput.deadzone_elimination_l);
+  input.gamepad.xinput.deadzone_elimination_r->load (config.input.gamepad.xinput.deadzone_elimination_r);
+  input.gamepad.xinput.deadzone_elimination_real_deadzone_l->load (config.input.gamepad.xinput.deadzone_elimination_real_deadzone_l);
+  input.gamepad.xinput.deadzone_elimination_real_deadzone_r->load (config.input.gamepad.xinput.deadzone_elimination_real_deadzone_r);
   input.gamepad.xinput.invert_lx->load         (config.input.gamepad.xinput.invert_lx);
   input.gamepad.xinput.invert_ly->load         (config.input.gamepad.xinput.invert_ly);
   input.gamepad.xinput.invert_rx->load         (config.input.gamepad.xinput.invert_rx);
@@ -7004,6 +7019,11 @@ SK_SaveConfig ( std::wstring name,
   input.gamepad.xinput.blackout_api->store         (config.input.gamepad.xinput.blackout_api);
   input.gamepad.xinput.emulate->store              (config.input.gamepad.xinput.emulate);
   input.gamepad.xinput.deadzone->store             (config.input.gamepad.xinput.deadzone);
+  input.gamepad.xinput.deadzone_elimination_enabled->store (config.input.gamepad.xinput.deadzone_elimination_enabled);
+  input.gamepad.xinput.deadzone_elimination_l->store (config.input.gamepad.xinput.deadzone_elimination_l);
+  input.gamepad.xinput.deadzone_elimination_r->store (config.input.gamepad.xinput.deadzone_elimination_r);
+  input.gamepad.xinput.deadzone_elimination_real_deadzone_l->store (config.input.gamepad.xinput.deadzone_elimination_real_deadzone_l);
+  input.gamepad.xinput.deadzone_elimination_real_deadzone_r->store (config.input.gamepad.xinput.deadzone_elimination_real_deadzone_r);
   input.gamepad.xinput.invert_lx->store            (config.input.gamepad.xinput.invert_lx);
   input.gamepad.xinput.invert_ly->store            (config.input.gamepad.xinput.invert_ly);
   input.gamepad.xinput.invert_rx->store            (config.input.gamepad.xinput.invert_rx);

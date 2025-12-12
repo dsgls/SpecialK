@@ -1199,6 +1199,11 @@ struct sk_config_t
         bool  emulate             = false;
         bool  debug               = false;
         float deadzone            =  5.0f; // 5% Left/Right Analog Stick Deadzone
+        bool  deadzone_elimination_enabled = false; // Enable/disable deadzone elimination feature
+        int   deadzone_elimination_l =  0; // Raw input value (0-32767) for left stick deadzone elimination
+        int   deadzone_elimination_r =  0; // Raw input value (0-32767) for right stick deadzone elimination
+        int   deadzone_elimination_real_deadzone_l = 0; // Raw input value (0-32767) for left stick real deadzone (applied before elimination)
+        int   deadzone_elimination_real_deadzone_r = 0; // Raw input value (0-32767) for right stick real deadzone (applied before elimination)
         bool  invert_lx           =  false;
         bool  invert_ly           =  false;
         bool  invert_rx           =  false;
