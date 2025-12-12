@@ -261,7 +261,7 @@ SK_ImGui_FilterXInputKeystroke (
   _Out_ XINPUT_KEYSTROKE *pKeystroke );
 
 void
-SK_XInput_ApplyDeadzone (XINPUT_STATE* state, float deadzone_percent);
+SK_XInput_ApplyDeadzone (XINPUT_STATE* state, float deadzone_percent, int deadzone_elimination_l = 0, int deadzone_elimination_r = 0, int real_deadzone_l = 0, int real_deadzone_r = 0, bool elimination_enabled = false);
 
 void
 SK_XInput_ApplyRemapping (XINPUT_STATE* state);

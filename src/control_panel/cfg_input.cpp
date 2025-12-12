@@ -1702,6 +1702,92 @@ SK::ControlPanel::Input::Draw (void)
         ////ImGui::EndGroup   ();
 
         ImGui::Separator ( );
+
+        // Deadzone Elimination Controls
+        if (ImGui::Checkbox ("Eliminate Hardcoded Game Deadzones", &config.input.gamepad.xinput.deadzone_elimination_enabled))
+        {
+          if (! config.input.gamepad.xinput.deadzone_elimination_enabled)
+          {
+            config.input.gamepad.xinput.deadzone_elimination_l = 0;
+            config.input.gamepad.xinput.deadzone_elimination_r = 0;
+            config.input.gamepad.xinput.deadzone_elimination_real_deadzone_l = 0;
+            config.input.gamepad.xinput.deadzone_elimination_real_deadzone_r = 0;
+          }
+          changed = true;
+        }
+
+        ImGui::SetItemTooltip (
+          "Compensates for games with built-in deadzones using circular/radial logic.\n"
+          "Compresses stick magnitude into [threshold, 32767] while preserving direction,\n"
+          "ensuring uniform sensitivity across all angles and consistent response to game deadzones."
+        );
+
+        if (config.input.gamepad.xinput.deadzone_elimination_enabled)
+        {
+          ImGui::TreePush       ("");
+          ImGui::BeginGroup     (  );
+
+          const float item_spacing_x = ImGui::GetStyle ().ItemSpacing.x;
+          const float slider_width   = item_spacing_x * 2 +
+                     ImGui::CalcTextSize ("32767 Raw Input\t").x;
+
+          ImGui::PushItemWidth  (slider_width);
+
+          changed |=
+          ImGui::SliderInt      ("Real Deadzone Left Stick##DeadzoneRealL",
+            &config.input.gamepad.xinput.deadzone_elimination_real_deadzone_l,
+            0, 32767, "%d Raw Input");
+
+          ImGui::SetItemTooltip (
+            "Circular deadzone: if stick magnitude (distance from center) is below this threshold,\n"
+            "both axes output 0. Creates a radial deadzone.\n"
+            "Applied before deadzone elimination."
+          );
+
+          changed |=
+          ImGui::SliderInt      ("Real Deadzone Right Stick##DeadzoneRealR",
+            &config.input.gamepad.xinput.deadzone_elimination_real_deadzone_r,
+            0, 32767, "%d Raw Input");
+
+          ImGui::SetItemTooltip (
+            "Circular deadzone: if stick magnitude (distance from center) is below this threshold,\n"
+            "both axes output 0. Creates a radial deadzone.\n"
+            "Applied before deadzone elimination."
+          );
+
+          changed |=
+          ImGui::SliderInt      ("Elimination Left Stick##DeadzoneElimL",
+            &config.input.gamepad.xinput.deadzone_elimination_l,
+            0, 32767, "%d Raw Input");
+
+          ImGui::SetItemTooltip (
+            "Circular deadzone elimination: compresses stick magnitude from [0, 32767] to [threshold, 32767]\n"
+            "while preserving stick direction. Ensures minimal movements register above game deadzones,\n"
+            "regardless of direction. Creates uniform sensitivity across all angles."
+          );
+
+          changed |=
+          ImGui::SliderInt      ("Elimination Right Stick##DeadzoneElimR",
+            &config.input.gamepad.xinput.deadzone_elimination_r,
+            0, 32767, "%d Raw Input");
+
+          ImGui::SetItemTooltip (
+            "Circular deadzone elimination: compresses stick magnitude from [0, 32767] to [threshold, 32767]\n"
+            "while preserving stick direction. Ensures minimal movements register above game deadzones,\n"
+            "regardless of direction. Creates uniform sensitivity across all angles."
+          );
+
+          ImGui::PopItemWidth   (  );
+          ImGui::EndGroup       (  );
+          ImGui::TreePop        (  );
+        }
+
+        if (changed)
+        {
+          config.utility.save_async ();
+        }
+
+        ImGui::Separator ( );
       }
 
       SK_HID_PlayStationDevice *pNewestInput = nullptr;
