@@ -4658,7 +4658,12 @@ SK_EndBufferSwap (HRESULT hr, IUnknown* device, SK_TLS* pTLS)
     &SK_RenderBackend::frames_drawn
   );
 
-  SK_StartPerfMonThreads ();
+  // Only start performance monitoring if overlay is visible or explicitly configured
+  // This prevents early initialization before AMD's dynamic core hiding completes
+  if (SK_ImGui_Visible || config.cpu.show || config.disk.show || config.pagefile.show)
+  {
+    SK_StartPerfMonThreads ();
+  }
 
   if (int32_t hooks_queued = (int32_t)ReadULongAcquire (&SK_MinHook_HooksQueuedButNotApplied);
               hooks_queued > 0)
