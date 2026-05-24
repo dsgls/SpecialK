@@ -30,7 +30,7 @@ SK_INCLUDE_START_CPP (COM_UTIL)
 #include <cstdlib>
 #include <atlcomcli.h>
 #include <comdef.h>
-#include <shlwapi.h>
+#include <shlwapi.h> // IUnknown_AtomicRelease
 #include <winstring.h>
 
 #include <SpecialK/thread.h>

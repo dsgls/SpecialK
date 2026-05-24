@@ -2456,10 +2456,13 @@ SK_Inject_ParseWhiteAndBlacklists (const std::wstring& base_path)
 
       else
       {
+        // std::locale::empty() was a non-Standard MSVC extension; newer STL hides
+        //   it behind _CRTBLD. classic() is equivalent here since only the codecvt
+        //   facet installed below matters for reading this UTF-8 file.
         list_file.imbue (
 // Win8.1 fallback relies on deprecated stuff, so surpress warning when compiling
 #pragma warning(suppress : 4996)
-            std::locale (std::locale::empty (),
+            std::locale (std::locale::classic (),
                          new (std::nothrow) std::codecvt_utf8 <wchar_t, 0x10ffff> ())
         );
       }
