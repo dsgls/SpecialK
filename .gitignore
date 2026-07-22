@@ -293,3 +293,5 @@ opengl_stateblock.cpp
 /docs/superpowers/
 /resource/textures/Gamepads/PS5 Button Icons and Controls/Buttons Full Solid/Black/128w/Circle.png
 *.png
+/test_programs/dxgi.dll
+/test_programs/dxgi.ini
