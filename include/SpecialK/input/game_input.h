@@ -182,6 +182,10 @@ public:
 
   SK_IWrapGameInputReading (SK_IWrapGameInputReading&& wrapped);
 
+  // Inner real reading; reading-chain forwards unwrap game-supplied wrappers
+  //   to this so SK-owned objects never reach the real implementation.
+  IGameInputReading *GetRealReading (void) noexcept { return pReal; }
+
 #pragma region IUnknown
   virtual HRESULT       __stdcall QueryInterface           (REFIID riid, void **ppvObject)          noexcept override;
   virtual ULONG         __stdcall AddRef                   (void)                                   noexcept override;

@@ -460,7 +460,10 @@ WGI_Gamepad_GetCurrentReading_Override (ABI::Windows::Gaming::Input::IGamepad   
       if (std::exchange (dwLastTime, SK_timeGetTime ()) <
                                      SK_timeGetTime () - 2)
       {
-        SK_XInput_PollController (0, &xi_state);
+        // Known edge: returns true without writing xi_state when no pad is
+        //   assigned to slot 0 (assignment [0] == -1); slips past this gate, accepted.
+        if (SK_XInput_PollController (0, &xi_state))
+          SK_XInput_ApplyDeadzone     (&xi_state);   // shape fresh data exactly once
       }
 
       SK_XInput_ApplyRemapping (&xi_state);
@@ -520,8 +523,23 @@ WGI_Gamepad_GetCurrentReading_Override (ABI::Windows::Gaming::Input::IGamepad   
       SK_WGI_VIEW (SK_WGI_Backend, 0);
     }
 
+    if (SUCCEEDED (hr_real) && value != nullptr)
+    {
+      float lx = static_cast <float> (value->LeftThumbstickX),
+            ly = static_cast <float> (value->LeftThumbstickY),
+            rx = static_cast <float> (value->RightThumbstickX),
+            ry = static_cast <float> (value->RightThumbstickY);
+
+      SK_XInput_ShapeSticks (lx, ly, rx, ry);
+
+      value->LeftThumbstickX  = static_cast <double> (lx);
+      value->LeftThumbstickY  = static_cast <double> (ly);
+      value->RightThumbstickX = static_cast <double> (rx);
+      value->RightThumbstickY = static_cast <double> (ry);
+    }
+
     return hr;
-  } 
+  }
 
   else if (! config.input.gamepad.xinput.blackout_api)
   {
@@ -610,6 +628,7 @@ WGI_Gamepad_GetCurrentReading_Override (ABI::Windows::Gaming::Input::IGamepad   
           value->Buttons |= GamepadButtons::GamepadButtons_Paddle4;
       }
 
+      // PlayStation sticks arrive pre-shaped, do not re-shape
       value->LeftThumbstickX  = (double)fmaxf(-1, (float)xi_state.Gamepad.sThumbLX / 32767);
       value->LeftThumbstickY  = (double)fmaxf(-1, (float)xi_state.Gamepad.sThumbLY / 32767);
 
@@ -646,7 +665,8 @@ WGI_Gamepad_GetCurrentReading_Override (ABI::Windows::Gaming::Input::IGamepad   
       if (std::exchange (dwLastTime, SK_timeGetTime ()) <
                                      SK_timeGetTime () - 2)
       {
-        SK_XInput_PollController (0, &xi_state);
+        if (SK_XInput_PollController (0, &xi_state))
+          SK_XInput_ApplyDeadzone     (&xi_state);   // shape fresh data exactly once
       }
 
       SK_XInput_ApplyRemapping (&xi_state);

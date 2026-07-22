@@ -57,6 +57,12 @@ extern SK_LazyGlobal <sk_input_api_context_s> SK_GameInput_Backend;
                                 (_Index),                                     \
                                   (_Override),                                \
                                     (LPVOID *)&(_Original));                  \
+                                                                              \
+    /* The queued enable is silently dropped while the global apply flag  */  \
+    /* is off (early init); enable directly so one-shot call sites are    */  \
+    /* intercepted from the first call.                                   */  \
+    if ((_Original) != nullptr)                                               \
+      SK_EnableHook (_vftable [_Index]);                                      \
   }                                                                           \
 }
 
@@ -195,6 +201,307 @@ SK_IWrapGameInput::GetCurrentTimestamp (void) noexcept
 
 static concurrency::concurrent_unordered_map <IGameInputDevice*,concurrency::concurrent_unordered_map <GameInputKind,SK_ComPtr<IGameInputReading>>> _current_readings;
 
+using IGameInputReading_GetGamepadState_pfn = bool (STDMETHODCALLTYPE *)(IGameInputReading*,GameInputGamepadState*) noexcept;
+
+IGameInputReading_GetGamepadState_pfn IGameInputReading_GetGamepadState_Original = nullptr;
+
+// Guards installation of the GetGamepadState shaping hook across all FOUR
+//   install sites (GetCurrentReading, GetNextReading, GetPreviousReading, and
+//   GetTemporalReading). A per-site SK_RunOnce is not enough: multiple threads
+//   can race through different sites' null checks on a title's first-ever
+//   poll, each passing GI_VIRTUAL_HOOK's non-atomic (_Original == nullptr)
+//   guard, and the loser hits MinHook's ALREADY_CREATED path, which removes and
+//   recreates the hook with a use-after-free window on the freed trampoline.
+//   This single atomic makes the install exactly-once across all sites.
+static volatile LONG s_GameInputReadingHooked = FALSE;
+
+// Shapes native GameInput gamepad sticks through SK's shared deadzone/response-
+//   curve pipeline. Every real IGameInputReading (from GetCurrentReading,
+//   GetNextReading, GetPreviousReading, GetTemporalReading, or a callback)
+//   shares one vtable, so this single hook covers every acquisition path.
+//
+// Hot path: pure math, config reads, and the same per-call activity marks the
+//   other input backends make. Safe on any game thread -- no locks, no
+//   allocation, no logging. Idempotent per call because the original
+//   re-materializes state from the reading's immutable snapshot.
+bool
+STDMETHODCALLTYPE
+IGameInputReading_GetGamepadState_Override (IGameInputReading *This, GameInputGamepadState *state) noexcept
+{
+  bool bRet =
+    IGameInputReading_GetGamepadState_Original (This, state);
+
+  if (bRet)
+  {
+    // Xbox Mode's wrapper marks this activity at acquisition -- skip marking
+    //   here so the two sites do not double-count.
+    const bool mark_activity =
+      (! config.input.gamepad.xinput.emulate);
+
+    if (mark_activity)
+      SK_GAMEINPUT_READ (sk_input_dev_type::Gamepad);
+
+    // Shape or zero, never both -- no point curving values we then discard.
+    if (SK_ImGui_WantGamepadCapture ())
+    {
+      if (mark_activity)
+        SK_GAMEINPUT_HIDE (sk_input_dev_type::Gamepad);
+
+      ZeroMemory (state, sizeof (GameInputGamepadState));
+    }
+
+    else
+    {
+      if (mark_activity)
+        SK_GAMEINPUT_VIEW (sk_input_dev_type::Gamepad);
+
+      SK_XInput_ShapeSticks (state->leftThumbstickX,  state->leftThumbstickY,
+                             state->rightThumbstickX, state->rightThumbstickY);
+    }
+  }
+
+  return bRet;
+}
+
+// Installs the GetGamepadState shaping hook on a real IGameInputReading's
+//   vtable. Callers must only pass a non-null real reading (never SK's
+//   SK_IWrapGameInputReading or SK_IPlayStationGameInputReading).
+static void
+SK_GameInput_InstallReadingHook (IGameInputReading **ppReading)
+{
+  if (InterlockedCompareExchange (&s_GameInputReadingHooked, TRUE, FALSE) == FALSE)
+  {
+    GI_VIRTUAL_HOOK ( ppReading, 22,
+                        "IGameInputReading::GetGamepadState",
+                         IGameInputReading_GetGamepadState_Override,
+                         IGameInputReading_GetGamepadState_Original,
+                         IGameInputReading_GetGamepadState_pfn );
+
+    SK_ApplyQueuedHooks ();
+
+    // Hook creation can fail (e.g. non-executable vtable target); the
+    //   trampoline stays null in that case. Release the guard so a later
+    //   reading retries instead of leaving shaping silently disabled.
+    if (IGameInputReading_GetGamepadState_Original == nullptr)
+      InterlockedExchange (&s_GameInputReadingHooked, FALSE);
+  }
+}
+
+using IGameInput_GetCurrentReading_pfn       = HRESULT (STDMETHODCALLTYPE *)(IGameInput*,GameInputKind,IGameInputDevice*,IGameInputReading**)                                       noexcept;
+using IGameInput_GetNextReading_pfn          = HRESULT (STDMETHODCALLTYPE *)(IGameInput*,IGameInputReading*,GameInputKind,IGameInputDevice*,IGameInputReading**)                    noexcept;
+using IGameInput_GetPreviousReading_pfn      = HRESULT (STDMETHODCALLTYPE *)(IGameInput*,IGameInputReading*,GameInputKind,IGameInputDevice*,IGameInputReading**)                    noexcept;
+using IGameInput_GetTemporalReading_pfn      = HRESULT (STDMETHODCALLTYPE *)(IGameInput*,uint64_t,IGameInputDevice*,IGameInputReading**)                                            noexcept;
+using IGameInput_RegisterReadingCallback_pfn = HRESULT (STDMETHODCALLTYPE *)(IGameInput*,IGameInputDevice*,GameInputKind,float,void*,GameInputReadingCallback,GameInputCallbackToken*) noexcept;
+
+IGameInput_GetCurrentReading_pfn       IGameInput_GetCurrentReading_Original       = nullptr;
+IGameInput_GetNextReading_pfn          IGameInput_GetNextReading_Original          = nullptr;
+IGameInput_GetPreviousReading_pfn      IGameInput_GetPreviousReading_Original      = nullptr;
+IGameInput_GetTemporalReading_pfn      IGameInput_GetTemporalReading_Original      = nullptr;
+IGameInput_RegisterReadingCallback_pfn IGameInput_RegisterReadingCallback_Original = nullptr;
+
+// The four polled acquisition methods on the real IGameInput. Each is a thin
+//   forwarder that installs the shaping hook on the reading it returns; once
+//   IGameInputReading_GetGamepadState_Original is non-null the install is a
+//   single atomic read that falls straight through.
+HRESULT
+STDMETHODCALLTYPE
+IGameInput_GetCurrentReading_Override (IGameInput *This, GameInputKind inputKind,
+                                       IGameInputDevice *device, IGameInputReading **reading) noexcept
+{
+  SK_LOG_FIRST_CALL
+
+  HRESULT hr =
+    IGameInput_GetCurrentReading_Original (This, inputKind, device, reading);
+
+  if (SUCCEEDED (hr) && reading != nullptr && *reading != nullptr)
+    SK_GameInput_InstallReadingHook (reading);
+
+  return hr;
+}
+
+HRESULT
+STDMETHODCALLTYPE
+IGameInput_GetNextReading_Override (IGameInput *This, IGameInputReading *referenceReading,
+                                    GameInputKind inputKind, IGameInputDevice *device,
+                                    IGameInputReading **reading) noexcept
+{
+  SK_LOG_FIRST_CALL
+
+  HRESULT hr =
+    IGameInput_GetNextReading_Original (This, referenceReading, inputKind, device, reading);
+
+  if (SUCCEEDED (hr) && reading != nullptr && *reading != nullptr)
+    SK_GameInput_InstallReadingHook (reading);
+
+  return hr;
+}
+
+HRESULT
+STDMETHODCALLTYPE
+IGameInput_GetPreviousReading_Override (IGameInput *This, IGameInputReading *referenceReading,
+                                        GameInputKind inputKind, IGameInputDevice *device,
+                                        IGameInputReading **reading) noexcept
+{
+  SK_LOG_FIRST_CALL
+
+  HRESULT hr =
+    IGameInput_GetPreviousReading_Original (This, referenceReading, inputKind, device, reading);
+
+  if (SUCCEEDED (hr) && reading != nullptr && *reading != nullptr)
+    SK_GameInput_InstallReadingHook (reading);
+
+  return hr;
+}
+
+HRESULT
+STDMETHODCALLTYPE
+IGameInput_GetTemporalReading_Override (IGameInput *This, uint64_t timestamp,
+                                        IGameInputDevice *device, IGameInputReading **reading) noexcept
+{
+  SK_LOG_FIRST_CALL
+
+  HRESULT hr =
+    IGameInput_GetTemporalReading_Original (This, timestamp, device, reading);
+
+  if (SUCCEEDED (hr) && reading != nullptr && *reading != nullptr)
+    SK_GameInput_InstallReadingHook (reading);
+
+  return hr;
+}
+
+struct SK_GameInputReadingCallbackShim {
+  GameInputReadingCallback fn;
+  void                    *context;
+};
+
+// Interposed between the game's reading callback and GameInput. The reading
+//   reaches here before the game's callback body runs, so the game's very
+//   first GetGamepadState inside that callback is already shaped.
+void
+CALLBACK
+SK_GameInput_ReadingCallbackThunk ( GameInputCallbackToken callbackToken, void *context,
+                                    IGameInputReading *reading, bool hasOverrunOccurred )
+{
+  auto *shim =
+    static_cast <SK_GameInputReadingCallbackShim *> (context);
+
+  if (reading != nullptr)
+    SK_GameInput_InstallReadingHook (&reading);
+
+  shim->fn (callbackToken, shim->context, reading, hasOverrunOccurred);
+}
+
+// A title that reads exclusively through RegisterReadingCallback never acquires
+//   a reading by a polled method, so nothing else installs the shaping hook.
+//   Interpose a thunk only when we still need a reading.
+HRESULT
+STDMETHODCALLTYPE
+IGameInput_RegisterReadingCallback_Override (IGameInput *This, IGameInputDevice *device,
+                                             GameInputKind inputKind, float analogThreshold,
+                                             void *context, GameInputReadingCallback callbackFunc,
+                                             GameInputCallbackToken *callbackToken) noexcept
+{
+  SK_LOG_FIRST_CALL
+
+  // Hook already installed -> this registration has nothing to teach us.
+  //   Forward untouched: no thunk, no allocation, no per-delivery cost.
+  if (IGameInputReading_GetGamepadState_Original != nullptr || callbackFunc == nullptr)
+  {
+    return
+      IGameInput_RegisterReadingCallback_Original ( This, device, inputKind, analogThreshold,
+                                                      context, callbackFunc, callbackToken );
+  }
+
+  // Shim lifetime: allocated once, freed only on registration failure. Freeing
+  //   on unregistration would need an UnregisterCallback hook and open a
+  //   use-after-free window against a callback in flight on a thread we do not
+  //   control. In practice this is one ~16-byte allocation per process.
+  auto *shim =
+    new SK_GameInputReadingCallbackShim { callbackFunc, context };
+
+  HRESULT hr =
+    IGameInput_RegisterReadingCallback_Original ( This, device, inputKind, analogThreshold,
+                                                  shim, SK_GameInput_ReadingCallbackThunk,
+                                                    callbackToken );
+
+  if (FAILED (hr))  // nothing can be in flight yet
+    delete shim;
+
+  return hr;
+}
+
+// Refuses vtables that live in SpecialK's own module. In Xbox Mode the system
+//   GameInput.dll hands our inner SK_IWrapGameInput back to the outer create
+//   detour, and hooking our own C++ vtable would be self-recursion.
+static bool
+SK_GameInput_IsOwnVFTable (void *pObj)
+{
+  void  **vftable = *(void ***)pObj;
+  HMODULE hModVFT =  nullptr;
+
+  GetModuleHandleExW ( GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                       GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                         (LPCWSTR)vftable [0], &hModVFT );
+
+  return
+    hModVFT == SK_GetDLL ();
+}
+
+// Guards the dispatch-hook install exactly-once across both create detours,
+//   following s_GameInputReadingHooked: release the guard if any trampoline is
+//   still null after SK_ApplyQueuedHooks so a later create retries instead of
+//   leaving shaping silently disabled.
+static volatile LONG s_GameInputDispatchHooked = FALSE;
+
+// Installs SK's dispatch hooks on the real IGameInput's vtable. Both create
+//   detours call this on the object GameInputCreate handed back; one shared
+//   GameInputRedist.dll implementation is reachable through both DLLs, so a
+//   single install covers Xbox Mode and the default path alike.
+static void
+SK_GameInput_InstallDispatchHooks (IGameInput **ppGameInput)
+{
+  if (SK_GameInput_IsOwnVFTable (*ppGameInput))
+    return;
+
+  if (InterlockedCompareExchange (&s_GameInputDispatchHooked, TRUE, FALSE) == FALSE)
+  {
+    GI_VIRTUAL_HOOK ( ppGameInput, 4,
+                        "IGameInput::GetCurrentReading",
+                         IGameInput_GetCurrentReading_Override,
+                         IGameInput_GetCurrentReading_Original,
+                         IGameInput_GetCurrentReading_pfn );
+    GI_VIRTUAL_HOOK ( ppGameInput, 5,
+                        "IGameInput::GetNextReading",
+                         IGameInput_GetNextReading_Override,
+                         IGameInput_GetNextReading_Original,
+                         IGameInput_GetNextReading_pfn );
+    GI_VIRTUAL_HOOK ( ppGameInput, 6,
+                        "IGameInput::GetPreviousReading",
+                         IGameInput_GetPreviousReading_Override,
+                         IGameInput_GetPreviousReading_Original,
+                         IGameInput_GetPreviousReading_pfn );
+    GI_VIRTUAL_HOOK ( ppGameInput, 7,
+                        "IGameInput::GetTemporalReading",
+                         IGameInput_GetTemporalReading_Override,
+                         IGameInput_GetTemporalReading_Original,
+                         IGameInput_GetTemporalReading_pfn );
+    GI_VIRTUAL_HOOK ( ppGameInput, 8,
+                        "IGameInput::RegisterReadingCallback",
+                         IGameInput_RegisterReadingCallback_Override,
+                         IGameInput_RegisterReadingCallback_Original,
+                         IGameInput_RegisterReadingCallback_pfn );
+
+    SK_ApplyQueuedHooks ();
+
+    if ( IGameInput_GetCurrentReading_Original        == nullptr ||
+         IGameInput_GetNextReading_Original           == nullptr ||
+         IGameInput_GetPreviousReading_Original       == nullptr ||
+         IGameInput_GetTemporalReading_Original       == nullptr ||
+         IGameInput_RegisterReadingCallback_Original  == nullptr )
+      InterlockedExchange (&s_GameInputDispatchHooked, FALSE);
+  }
+}
+
 HRESULT
 STDMETHODCALLTYPE
 SK_IWrapGameInput::GetCurrentReading (_In_          GameInputKind      inputKind,
@@ -255,7 +562,9 @@ SK_IWrapGameInput::GetCurrentReading (_In_          GameInputKind      inputKind
       pReal->GetCurrentReading (inputKind, device, reading);
 
     if (reading != nullptr)
+    {
       _current_readings [device][inputKind] = *reading;
+    }
 
     return hr;
   }
@@ -341,6 +650,36 @@ IGameInputDevice_SetRumbleState_Override (IGameInputDevice *This, GameInputRumbl
     IGameInputDevice_SetRumbleState_Original (This, &params_);
 }
 
+// SK-owned readings never cross into the real implementation. Classifies a
+//   game-supplied referenceReading by vtable pointer (each SK reading class
+//   has exactly one, taken from a static exemplar, so the per-call cost is
+//   two pointer compares): SK's PlayStation virtual reading has no real
+//   counterpart -- callers answer GAMEINPUT_E_READING_NOT_FOUND; a wrapped
+//   reading is unwrapped in place so its inner real reading forwards.
+static bool
+SK_GameInput_SanitizeReferenceReading (IGameInputReading *&referenceReading)
+{
+  if (referenceReading == nullptr)
+    return true;
+
+  static SK_IPlayStationGameInputReading exemplar_virtual (0);
+  static SK_IWrapGameInputReading        exemplar_wrapped (nullptr);
+
+  void *vftable =
+    *(void **)referenceReading;
+
+  if (vftable == *(void **)&exemplar_virtual)
+    return false;
+
+  if (vftable == *(void **)&exemplar_wrapped)
+  {
+    referenceReading =
+      ((SK_IWrapGameInputReading *)referenceReading)->GetRealReading ();
+  }
+
+  return true;
+}
+
 HRESULT
 STDMETHODCALLTYPE
 SK_IWrapGameInput::GetNextReading (_In_         IGameInputReading  *referenceReading,
@@ -424,8 +763,18 @@ SK_IWrapGameInput::GetNextReading (_In_         IGameInputReading  *referenceRea
     return GAMEINPUT_E_READING_NOT_FOUND;
   }
 
-  if (device == s_virtual_gameinput_device && inputKind == GameInputKindGamepad)
+  if (device == s_virtual_gameinput_device)
   {
+    // The virtual pad emulates only gamepad readings; report no history for
+    //   every other kind rather than fall through to the forwarding paths
+    //   below with the SK-owned device.
+    if (inputKind != GameInputKindGamepad)
+    {
+      if (reading != nullptr)
+         *reading  = nullptr;
+      return GAMEINPUT_E_READING_NOT_FOUND;
+    }
+
     static SK_IPlayStationGameInputReading virtual_next_reading (0);
     static UINT64                          last_virtual_active = 0;
            UINT64                          virtual_active      = 0;
@@ -457,6 +806,15 @@ SK_IWrapGameInput::GetNextReading (_In_         IGameInputReading  *referenceRea
       return S_OK;
     }
 
+    if (reading != nullptr)
+       *reading  = nullptr;
+    return GAMEINPUT_E_READING_NOT_FOUND;
+  }
+
+  // A reading acquired from SK's virtual pad chains here when the title
+  //   passes device = nullptr or a real device; never forward it.
+  if (! SK_GameInput_SanitizeReferenceReading (referenceReading))
+  {
     if (reading != nullptr)
        *reading  = nullptr;
     return GAMEINPUT_E_READING_NOT_FOUND;
@@ -533,6 +891,25 @@ SK_IWrapGameInput::GetPreviousReading (_In_         IGameInputReading  *referenc
   bool capture_input = false;
   static concurrency::concurrent_unordered_map <IGameInputDevice*,concurrency::concurrent_unordered_map <GameInputKind,SK_ComPtr<IGameInputReading>>> readings;
 
+  // SK's emulation keeps no reading history -- answer for the virtual device
+  //   here; forwarding it (and the SK-owned referenceReading paired with it)
+  //   into the real implementation would dereference foreign objects.
+  if (device == s_virtual_gameinput_device)
+  {
+    if (reading != nullptr)
+       *reading  = nullptr;
+    return GAMEINPUT_E_READING_NOT_FOUND;
+  }
+
+  // The title may also chain an SK-owned reading with device = nullptr or a
+  //   real device; never forward it.
+  if (! SK_GameInput_SanitizeReferenceReading (referenceReading))
+  {
+    if (reading != nullptr)
+       *reading  = nullptr;
+    return GAMEINPUT_E_READING_NOT_FOUND;
+  }
+
   switch (inputKind)
   {
     case GameInputKindKeyboard:
@@ -607,8 +984,20 @@ SK_IWrapGameInput::GetTemporalReading (_In_         uint64_t            timestam
 {
   SK_LOG_FIRST_CALL
 
-  return
+  // Mirrors GetCurrentReading: the static reading reads live state when
+  //   polled, the closest answer SK's history-less emulation has for any
+  //   timestamp. Never forward the SK-owned device to the real implementation.
+  if (device == s_virtual_gameinput_device)
+  {
+    static SK_IPlayStationGameInputReading virtual_temporal_reading (0);
+    *reading =       (IGameInputReading *)&virtual_temporal_reading;
+    return S_OK;
+  }
+
+  HRESULT hr =
     pReal->GetTemporalReading (timestamp, device, reading);
+
+  return hr;
 }
 
 HRESULT
@@ -622,7 +1011,16 @@ SK_IWrapGameInput::RegisterReadingCallback (_In_opt_                         IGa
 {
   SK_LOG_FIRST_CALL
 
+  // Register against any device instead of SK's virtual one -- the real
+  //   implementation dereferences the device at registration time. The token
+  //   stays real, so StopCallback/UnregisterCallback work; the virtual pad's
+  //   input arrives via the polled paths only (SK's emulation has no callback
+  //   delivery).
+  if (device == s_virtual_gameinput_device)
+      device  = nullptr;
+
   return
+    pReal == nullptr ? S_OK :
     pReal->RegisterReadingCallback (device, inputKind, analogThreshold, context, callbackFunc, callbackToken);
 }
 
@@ -640,6 +1038,12 @@ SK_IWrapGameInput::RegisterDeviceCallback (_In_opt_                        IGame
 
   SK_LOGi1 ( L"RegisterDeviceCallback: inputKind=%d, statusFilter=%x, enumerationKind=%d",
                                        inputKind,    statusFilter,    enumerationKind );
+
+  // Widen an SK-virtual-device filter to any device -- the real implementation
+  //   dereferences the filter device, and a real token must come back so
+  //   StopCallback/UnregisterCallback work.
+  if (device == s_virtual_gameinput_device)
+      device  = nullptr;
 
   HRESULT hr =
     pReal == nullptr ? S_OK : pReal->RegisterDeviceCallback (device, inputKind, statusFilter, enumerationKind, context, callbackFunc, callbackToken);
@@ -666,8 +1070,13 @@ SK_IWrapGameInput::RegisterSystemButtonCallback (_In_opt_                       
 {
   SK_LOG_FIRST_CALL
 
+  // Same guard as RegisterDeviceCallback: never hand the SK-owned filter
+  //   device to the real implementation.
+  if (device == s_virtual_gameinput_device)
+      device  = nullptr;
+
   return
-    pReal == nullptr ? S_OK : 
+    pReal == nullptr ? S_OK :
     pReal->RegisterSystemButtonCallback (device, buttonFilter, context, callbackFunc, callbackToken);
 }
 
@@ -680,8 +1089,13 @@ SK_IWrapGameInput::RegisterKeyboardLayoutCallback (_In_opt_                     
 {
   SK_LOG_FIRST_CALL
 
+  // Same guard as RegisterDeviceCallback: never hand the SK-owned filter
+  //   device to the real implementation.
+  if (device == s_virtual_gameinput_device)
+      device  = nullptr;
+
   return
-    pReal == nullptr ? S_OK : 
+    pReal == nullptr ? S_OK :
     pReal->RegisterKeyboardLayoutCallback (device, context, callbackFunc, callbackToken);
 }
 
@@ -814,6 +1228,9 @@ GameInputCreate_Detour (IGameInput** gameInput)
   HRESULT hr =
     GameInputCreate_Original (&pReal);
 
+  if (SUCCEEDED (hr) && pReal != nullptr)
+    SK_GameInput_InstallDispatchHooks (&pReal);
+
   if (SUCCEEDED (hr) || config.input.gamepad.xinput.emulate)
   {
     // Turn on XInput emulation by default on first-run for Unreal Engine.
@@ -860,6 +1277,9 @@ GameInputCreate_Redist_Detour (IGameInput** gameInput)
 
   HRESULT hr =
     GameInputCreate_Redist_Original (&pReal);
+
+  if (SUCCEEDED (hr) && pReal != nullptr)
+    SK_GameInput_InstallDispatchHooks (&pReal);
 
   if (SUCCEEDED (hr) || config.input.gamepad.xinput.emulate)
   {
@@ -1547,6 +1967,10 @@ SK_IWrapGameInputReading::GetGamepadState (GameInputGamepadState *state) noexcep
 {
   SK_LOG_FIRST_CALL
 
+  // Pure forwarder: pReal is the real reading, so this call lands in
+  //   IGameInputReading_GetGamepadState_Override, which already zeroes on
+  //   capture. The zero below is redundant but idempotent -- kept as
+  //   belt-and-braces so Xbox Mode behavior is unaffected.
   if (pReal->GetGamepadState (state))
   {
     if (SK_ImGui_WantGamepadCapture ())
@@ -1580,58 +2004,152 @@ SK_IWrapGameInputReading::GetUiNavigationState (GameInputUiNavigationState *stat
     pReal->GetUiNavigationState (state);
 }
 
+static volatile LONG s_hooked_system = FALSE;
+static volatile LONG s_hooked_redist = FALSE;
+
+// Installs the GameInputCreate export hook for a single module. The
+//   caller-supplied guard makes the inline and worker-thread paths mutually
+//     exclusive, so the export is never hooked twice.
+static void
+SK_GameInput_HookCreate ( const wchar_t       *wszModule,
+                          GameInputCreate_pfn  pDetour,
+                          GameInputCreate_pfn *ppOriginal,
+                          volatile LONG       *pHooked )
+{
+  if (! InterlockedCompareExchange (pHooked, TRUE, FALSE))
+  {
+    void *pfnTarget = nullptr;
+
+    SK_CreateDLLHook2 (      wszModule,
+                              "GameInputCreate",
+                               pDetour,
+      static_cast_p2p <void> (ppOriginal),
+                              &pfnTarget );
+
+    // SK_ApplyQueuedHooks is a silent no-op while the global apply flag is
+    //   off (early init) -- enable directly so the title's one-shot
+    //   GameInputCreate call cannot slip through unhooked.
+    if (pfnTarget != nullptr)
+      SK_EnableHook (pfnTarget);
+  }
+}
+
+// Covers titles that called GameInputCreate before SK attached (global
+//   injection attaches around window creation, long after a top-of-main
+//   create): the export hook arms too late to ever fire, but the
+//   implementation is a process-wide singleton, so acquiring our own
+//   instance and patching its dispatch vtable also covers the object the
+//   title already holds. Runs on a worker thread because SK_Input_Init can
+//   run under the loader lock and GameInputCreate may LoadLibrary the
+//   redist internally.
+static void
+SK_GameInput_HookExistingInstance (GameInputCreate_pfn pfnCreate)
+{
+  static volatile LONG s_hooked_existing = FALSE;
+
+  if (pfnCreate == nullptr)
+    return;
+
+  if (InterlockedCompareExchange (&s_hooked_existing, TRUE, FALSE))
+    return;
+
+  SK_Thread_CreateEx ([](LPVOID user)->DWORD
+  {
+    auto pfnGameInputCreate =
+      reinterpret_cast <GameInputCreate_pfn> (user);
+
+    IGameInput *pGameInput = nullptr;
+
+    if ( SUCCEEDED (pfnGameInputCreate (&pGameInput)) &&
+                                         pGameInput != nullptr )
+    {
+      SK_GameInput_InstallDispatchHooks (&pGameInput);
+
+      // A callback-only title that registered before SK attached never
+      //   passes through the dispatch overrides, so nothing else would
+      //   install the reading-shaping hook. Acquire readings ourselves
+      //   until one arrives.
+      while ((! ReadAcquire (&__SK_DLL_Ending)) &&
+               IGameInputReading_GetGamepadState_Original == nullptr)
+      {
+        SK_ComPtr <IGameInputReading> pReading;
+
+        if ( SUCCEEDED (
+               pGameInput->GetCurrentReading (GameInputKindGamepad, nullptr, &pReading.p)
+             )        &&               pReading != nullptr )
+        {
+          SK_GameInput_InstallReadingHook (&pReading.p);
+        }
+
+        if (IGameInputReading_GetGamepadState_Original == nullptr)
+          SK_SleepEx (250UL, FALSE);
+      }
+
+      pGameInput->Release ();
+    }
+
+    SK_Thread_CloseSelf ();
+
+    return 0;
+  }, L"[SK] GameInput Late Hook Thread", (LPVOID)pfnCreate);
+}
+
 void
 SK_Input_HookGameInput (void)
 {
   if (! config.input.gamepad.hook_game_input)
     return;
 
-  if ( GetModuleHandleW (L"GameInput.dll")       != nullptr ||
-       GetModuleHandleW (L"GameInputRedist.dll") != nullptr ||
-       config.input.gamepad.xinput.emulate )
+  // Already loaded -> hook inline. No LoadLibrary means no loader-lock
+  //   hazard, and this arms the hook before the app can call GameInputCreate.
+  if (GetModuleHandleW (L"GameInput.dll") != nullptr)
   {
-    if (config.input.gamepad.xinput.emulate || GetModuleHandleW (L"GameInput.dll"))
+    SK_GameInput_HookCreate ( L"GameInput.dll", GameInputCreate_Detour,
+                             &GameInputCreate_Original, &s_hooked_system );
+
+    // The title may have called GameInputCreate before SK attached; hook
+    //   the singleton it is already holding.
+    SK_GameInput_HookExistingInstance (GameInputCreate_Original);
+  }
+
+  if (GetModuleHandleW (L"GameInputRedist.dll") != nullptr)
+  {
+    SK_GameInput_HookCreate ( L"GameInputRedist.dll", GameInputCreate_Redist_Detour,
+                             &GameInputCreate_Redist_Original, &s_hooked_redist );
+
+    SK_GameInput_HookExistingInstance (GameInputCreate_Redist_Original);
+  }
+
+  // Only Xbox Mode force-loads a missing DLL, and SK_LoadLibraryW can run
+  //   under the loader lock from SK_Input_Init -- defer that to a worker.
+  if (config.input.gamepad.xinput.emulate)
+  {
+    if (GetModuleHandleW (L"GameInput.dll") == nullptr)
     {
       static HANDLE hGameInputInitThread =
       SK_Thread_CreateEx ([](LPVOID)->DWORD
       {
         SK_PROFILE_FIRST_CALL
 
-        static volatile LONG               hooked = FALSE;
-        if (! InterlockedCompareExchange (&hooked, TRUE, FALSE))
-        {
-          if (config.input.gamepad.xinput.emulate)
-            SK_LoadLibraryW (      L"GameInput.dll");
-          SK_CreateDLLHook2 (      L"GameInput.dll",
-                                    "GameInputCreate",
-                                     GameInputCreate_Detour,
-            static_cast_p2p <void> (&GameInputCreate_Original) );
-          SK_ApplyQueuedHooks ();
-        }
+        SK_LoadLibraryW (L"GameInput.dll");
+        SK_GameInput_HookCreate ( L"GameInput.dll", GameInputCreate_Detour,
+                                 &GameInputCreate_Original, &s_hooked_system );
 
         SK_Thread_CloseSelf ();
         return 0;
       }, L"[SK] GameInput.dll Init Thread");
     }
 
-    if (config.input.gamepad.xinput.emulate || GetModuleHandleW (L"GameInputRedist.dll"))
+    if (GetModuleHandleW (L"GameInputRedist.dll") == nullptr)
     {
       static HANDLE hGameInputRedistInitThread =
       SK_Thread_CreateEx ([](LPVOID)->DWORD
       {
         SK_PROFILE_FIRST_CALL
 
-        static volatile LONG               hooked = FALSE;
-        if (! InterlockedCompareExchange (&hooked, TRUE, FALSE))
-        {
-          if (config.input.gamepad.xinput.emulate)
-            SK_LoadLibraryW (      L"GameInputRedist.dll");
-          SK_CreateDLLHook2 (      L"GameInputRedist.dll",
-                                    "GameInputCreate",
-                                     GameInputCreate_Redist_Detour,
-            static_cast_p2p <void> (&GameInputCreate_Redist_Original) );
-          SK_ApplyQueuedHooks ();
-        }
+        SK_LoadLibraryW (L"GameInputRedist.dll");
+        SK_GameInput_HookCreate ( L"GameInputRedist.dll", GameInputCreate_Redist_Detour,
+                                 &GameInputCreate_Redist_Original, &s_hooked_redist );
 
         SK_Thread_CloseSelf ();
         return 0;
@@ -1958,6 +2476,9 @@ SK_IPlayStationGameInputReading::GetGamepadState (GameInputGamepadState *state) 
       {
         if (! SK_ImGui_WantGamepadCapture ())
         {
+          // SK's own reading/vtable, unaffected by the GetGamepadState hook.
+          //   These sticks arrive pre-shaped from playstation.cpp's HID
+          //   pipeline -- do not re-shape.
           auto latest_state =
             pNewestInputDevice->xinput.getLatestState ();
 
