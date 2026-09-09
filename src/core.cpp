@@ -2517,6 +2517,10 @@ SK_StartupCore (const wchar_t* backend, void* callback)
         SK_Persona4_InitPlugin ();
         break;
 
+      case SK_GAME_ID::DeusEx_HumanRevolution_DC:
+        SK_DXHR_InitPlugin ();
+        break;
+
 #ifdef _M_AMD64
       case SK_GAME_ID::NieR_Sqrt_1_5:
         SK_NIER_RAD_InitPlugin ();

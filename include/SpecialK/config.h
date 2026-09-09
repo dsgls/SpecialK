@@ -1994,6 +1994,7 @@ enum class SK_GAME_ID
   NevernessToEverness,          // NTEGlobalGame.exe
   Dispatch,                     // Dispatch-Win64-Shipping.exe, DispatchEGS-Win64-Shipping.exe
   Timberborn,                   // Timberborn.exe
+  DeusEx_HumanRevolution_DC,    // DXHRDC.exe
 
   UNKNOWN_GAME               = 0xffff
 };

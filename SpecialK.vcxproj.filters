@@ -3689,6 +3689,9 @@
     <ClCompile Include="src\steam\utils.cpp">
       <Filter>Source Files\Storefronts\Steam\Wrapper</Filter>
     </ClCompile>
+    <ClCompile Include="src\plugins\dxhr.cpp">
+      <Filter>Source Files\Plugins</Filter>
+    </ClCompile>
     <ClCompile Include="src\plugins\persona4.cpp">
       <Filter>Source Files\Plugins</Filter>
     </ClCompile>

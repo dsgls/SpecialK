@@ -2043,6 +2043,7 @@ if exist "$(TargetDir)$(TargetName).exp" ( del "$(TargetDir)$(TargetName).exp" )
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release (clang)|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="src\plugins\dxhr.cpp" />
     <ClCompile Include="src\plugins\persona4.cpp" />
     <ClCompile Include="src\plugins\secret_of_mana.cpp" />
     <ClCompile Include="src\plugins\sekiro.cpp">

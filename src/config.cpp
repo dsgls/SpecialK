@@ -343,7 +343,8 @@ SK_GetCurrentGameID (void) noexcept
           { L"htgame.exe",                             SK_GAME_ID::NevernessToEverness          },
           { L"Dispatch-Win64-Shipping.exe",            SK_GAME_ID::Dispatch                     },
           { L"DispatchEGS-Win64-Shipping.exe",         SK_GAME_ID::Dispatch                     },
-          { L"Timberborn.exe",                         SK_GAME_ID::Timberborn                   }
+          { L"Timberborn.exe",                         SK_GAME_ID::Timberborn                   },
+          { L"DXHRDC.exe",                             SK_GAME_ID::DeusEx_HumanRevolution_DC    }
         };
 
     first_check  = false;
