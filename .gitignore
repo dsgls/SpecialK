@@ -295,3 +295,5 @@ opengl_stateblock.cpp
 *.png
 /test_programs/dxgi.dll
 /test_programs/dxgi.ini
+__pycache__/
+*.pyc

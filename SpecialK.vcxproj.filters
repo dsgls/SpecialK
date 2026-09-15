@@ -3512,6 +3512,24 @@
     <ClCompile Include="src\mcp\tools_process.cpp">
       <Filter>Source Files\MCP</Filter>
     </ClCompile>
+    <ClCompile Include="src\mcp\address.cpp">
+      <Filter>Source Files\MCP</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mcp\render_queue.cpp">
+      <Filter>Source Files\MCP</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mcp\tools_memory.cpp">
+      <Filter>Source Files\MCP</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mcp\tools_symbols.cpp">
+      <Filter>Source Files\MCP</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mcp\tools_scan.cpp">
+      <Filter>Source Files\MCP</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mcp\tools_exec.cpp">
+      <Filter>Source Files\MCP</Filter>
+    </ClCompile>
     <ClCompile Include="src\control_panel\cfg_sound.cpp">
       <Filter>Source Files\Control Panel</Filter>
     </ClCompile>

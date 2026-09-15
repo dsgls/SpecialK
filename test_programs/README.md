@@ -197,3 +197,10 @@ verifiable from source, so this sweep is the only check available.
   installed, which needs one reading already acquired; a title in capture
   during its very first `IGameInputReading` acquisition sees one unzeroed
   frame.
+
+## Other scripts in this directory
+
+`mcp_clients.py` -- live checks for the MCP server's multi-client behaviour
+(coexistence, concurrency, cancellation, channel eviction, connection limits,
+`sk_read_many`, pointer-chain addresses); needs a game running with the MCP
+server enabled, and its eviction check disconnects a live bridge.

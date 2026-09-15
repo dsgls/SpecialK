@@ -65,14 +65,20 @@ SK::ControlPanel::MCP::Draw (void)
     const char* last_error =
       SK_MCP_LastError ();
 
+    char szOthers [32] = { };
+
+    if (const int others = SK_MCP_OtherClientCount (); others > 0)
+      snprintf (szOthers, sizeof (szOthers), " (+%d %s)", others,
+                others == 1 ? "client" : "clients");
+
     if (running && connected)
     {
-      ImGui::TextColored (ImVec4 (0.1f, 1.0f, 0.1f, 1.0f), "Client connected");
+      ImGui::TextColored (ImVec4 (0.1f, 1.0f, 0.1f, 1.0f), "Bridge connected%s", szOthers);
     }
 
     else if (running)
     {
-      ImGui::TextColored (ImVec4 (1.0f, 1.0f, 0.0f, 1.0f), "Listening");
+      ImGui::TextColored (ImVec4 (1.0f, 1.0f, 0.0f, 1.0f), "Listening%s", szOthers);
     }
 
     else if (last_error != nullptr && last_error [0] != '\0')

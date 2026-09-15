@@ -23,25 +23,12 @@
 
 #include "tools.h"
 
-#include <psapi.h>
-
 #include <algorithm>
 #include <atomic>
 #include <cctype>
 #include <vector>
 
 using json = nlohmann::json;
-
-static std::string
-SK_MCP_HexAddress (const void* addr)
-{
-  char szHex [32] = { };
-
-  snprintf ( szHex, sizeof (szHex), "0x%llx",
-               (unsigned long long)(uintptr_t)addr );
-
-  return szHex;
-}
 
 static std::string
 SK_MCP_ToLower (std::string str)
@@ -90,65 +77,22 @@ SK_MCP_ListModules (const json& args)
     }
   }
 
-  const HANDLE hProcess =
-    GetCurrentProcess ();
-
-  std::vector <HMODULE> mods (256);
-  DWORD                 cbNeeded = 0;
-
-  if (! EnumProcessModulesEx ( hProcess, mods.data (),
-                                  (DWORD)(mods.size () * sizeof (HMODULE)),
-                                    &cbNeeded, LIST_MODULES_ALL ))
-  {
-    throw SK_MCP_ToolError { "EnumProcessModulesEx failed" };
-  }
-
-  if (cbNeeded > mods.size () * sizeof (HMODULE))
-  {
-    mods.resize (cbNeeded / sizeof (HMODULE));
-
-    if (! EnumProcessModulesEx ( hProcess, mods.data (),
-                                    (DWORD)(mods.size () * sizeof (HMODULE)),
-                                      &cbNeeded, LIST_MODULES_ALL ))
-    {
-      throw SK_MCP_ToolError { "EnumProcessModulesEx failed" };
-    }
-  }
-
-  mods.resize (cbNeeded / sizeof (HMODULE));
-
   json modules =
     json::array ();
 
-  for (auto hMod : mods)
+  for (const auto& mod : SK_MCP_EnumModules ())
   {
-    MODULEINFO mod_info = { };
-
-    if (! GetModuleInformation ( hProcess, hMod, &mod_info,
-                                    sizeof (mod_info) ))
-      continue;
-
-    wchar_t wszPath [MAX_PATH + 1] = { };
-
-    GetModuleFileNameExW (hProcess, hMod, wszPath, MAX_PATH);
-
-    wchar_t wszName [MAX_PATH + 1] = { };
-    wcsncpy_s (wszName, wszPath, _TRUNCATE);
-    PathStripPathW (wszName);
-
-    const std::string name = SK_MCP_ToUTF8 (wszName);
-
     if (has_filter)
     {
-      if (SK_MCP_ToLower (name).find (filter_lower) == std::string::npos)
+      if (SK_MCP_ToLower (mod.name).find (filter_lower) == std::string::npos)
         continue;
     }
 
     modules.push_back ({
-      { "name", name                                      },
-      { "base", SK_MCP_HexAddress (mod_info.lpBaseOfDll)   },
-      { "size", (uint64_t)mod_info.SizeOfImage             },
-      { "path", SK_MCP_ToUTF8 (wszPath)                }
+      { "name", mod.name                        },
+      { "base", SK_MCP_FormatAddress (mod.base) },
+      { "size", (uint64_t)mod.size              },
+      { "path", SK_MCP_ToUTF8 (mod.path)        }
     });
   }
 

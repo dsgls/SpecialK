@@ -4032,6 +4032,10 @@ SK_BeginBufferSwapEx (BOOL bWaitOnFail)
 {
   SK_PROFILE_SCOPED_TASK (SK_BeginBufferSwapEx)
 
+  // Every backend presents through here, which makes this the presenting
+  //   thread the MCP tools run their jobs on.
+  SK_MCP_DrainRenderJobs ();
+
   // Update the active framerate limit for window state agnostic functions.
   __target_fps_now =
     (SK_IsGameWindowActive () || __target_fps_bg <= 0.0f) ?

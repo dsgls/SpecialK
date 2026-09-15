@@ -1955,7 +1955,13 @@ if exist "$(TargetDir)$(TargetName).exp" ( del "$(TargetDir)$(TargetName).exp" )
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\mcp\address.cpp" />
+    <ClCompile Include="src\mcp\render_queue.cpp" />
     <ClCompile Include="src\mcp\tools_process.cpp" />
+    <ClCompile Include="src\mcp\tools_memory.cpp" />
+    <ClCompile Include="src\mcp\tools_symbols.cpp" />
+    <ClCompile Include="src\mcp\tools_scan.cpp" />
+    <ClCompile Include="src\mcp\tools_exec.cpp" />
     <ClCompile Include="src\control_panel\cfg_sound.cpp" />
     <ClCompile Include="src\control_panel\cfg_steam.cpp" />
     <ClCompile Include="src\control_panel\cfg_window.cpp" />
