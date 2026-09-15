@@ -48,6 +48,7 @@ iSK_INI* input_ini    = nullptr;
 iSK_INI* platform_ini = nullptr;
 iSK_INI* macro_ini    = nullptr;
 iSK_INI* notify_ini   = nullptr;
+iSK_INI* mcp_ini      = nullptr;
 
 SK_LazyGlobal <SK_AppCache_Manager> app_cache_mgr;
 
@@ -851,6 +852,13 @@ struct {
 } reshade_cfg;
 
 struct {
+  sk::ParameterBool*      enabled                 = nullptr;
+  sk::ParameterInt*       port                    = nullptr;
+  sk::ParameterStringW*   bind_address            = nullptr;
+  sk::ParameterStringW*   token                   = nullptr;
+} mcp_cfg;
+
+struct {
   sk::ParameterBool*      per_monitor_aware       = nullptr;
   sk::ParameterBool*      per_monitor_all_threads = nullptr;
   sk::ParameterBool*      disable                 = nullptr;
@@ -1621,7 +1629,7 @@ SK_LoadConfigEx (std::wstring name, bool create)
 
   std::wstring   osd_config, platform_config,
                macro_config,    input_config,
-              notify_config;
+              notify_config,      mcp_config;
 
   full_name = // For paths with :, do not prepend the config root
     name.find (L':') != std::wstring::npos ?
@@ -1681,6 +1689,9 @@ SK_LoadConfigEx (std::wstring name, bool create)
   notify_config      =
     std::wstring (SK_GetInstallPath ()) + LR"(\Global\notifications.ini)";
 
+  mcp_config         =
+    std::wstring (SK_GetInstallPath ()) + LR"(\Global\mcp.ini)";
+
   if (init == FALSE || dll_ini == nullptr)
   {
     SK_RunOnce (     dll_ini   =
@@ -1716,6 +1727,8 @@ SK_LoadConfigEx (std::wstring name, bool create)
         SK_CreateINI (macro_config.c_str ());
       notify_ini       =
         SK_CreateINI (notify_config.c_str ());
+      mcp_ini          =
+        SK_CreateINI (mcp_config.c_str ());
     });
 
 
@@ -2396,6 +2409,11 @@ auto DeclKeybind =
     ConfigEntry (reshade_cfg.allow_sk_addon_and_reno,    L"Enable Special K's ReShade Add-On when RenoDX is in use.",  dll_ini,         L"ReShade.System",        L"AllowSKAddOnWithRenoDX"),
     ConfigEntry (reshade_cfg.allow_runtime_tracking,     L"Respond to creation and destruction of ReShade runtimes.",  dll_ini,         L"ReShade.System",        L"AllowRuntimeTracking"),
     ConfigEntry (reshade_cfg.require_fg_pacing_fix,      L"Add a second framerate limiter to compensate for ReShade.", dll_ini,         L"ReShade.System",        L"RequireFrameGenPacingFix"),
+
+    ConfigEntry (mcp_cfg.enabled,                        L"Serve this process to Claude Code over the MCP bridge",     dll_ini,         L"MCP.Server",            L"Enabled"),
+    ConfigEntry (mcp_cfg.port,                           L"TCP port the MCP server listens on",                        dll_ini,         L"MCP.Server",            L"Port"),
+    ConfigEntry (mcp_cfg.bind_address,                   L"Address the MCP server binds to",                           dll_ini,         L"MCP.Server",            L"BindAddress"),
+    ConfigEntry (mcp_cfg.token,                          L"Shared secret an MCP client must present (global)",         mcp_ini,         L"MCP.Server",            L"Token"),
 
     ConfigEntry (imgui.show_eula,                        L"Show Software EULA",                                        dll_ini,         L"SpecialK.System",       L"ShowEULA"),
     ConfigEntry (imgui.disable_alpha,                    L"Disable Alpha Transparency (reduce flicker)",               dll_ini,         L"ImGui.Render",          L"DisableAlpha"),
@@ -4972,6 +4990,11 @@ auto DeclKeybind =
   reshade_cfg.allow_sk_addon_and_reno->load (config.reshade.allow_addon_with_reno);
   reshade_cfg.allow_runtime_tracking->load  (config.reshade.allow_runtime_tracking);
   reshade_cfg.require_fg_pacing_fix->load   (config.reshade.require_fg_pacing_fix);
+
+  mcp_cfg.enabled->load                     (config.mcp.enabled);
+  mcp_cfg.port->load                        (config.mcp.port);
+  mcp_cfg.bind_address->load                (config.mcp.bind_address);
+  mcp_cfg.token->load                       (config.mcp.token);
 
   notifications.location->load              (config.notifications.location);
   notifications.silent->load                (config.notifications.silent);
@@ -7852,6 +7875,11 @@ SK_SaveConfig ( std::wstring name,
   reshade_cfg.allow_runtime_tracking->store   (config.reshade.allow_runtime_tracking);
   reshade_cfg.require_fg_pacing_fix->store    (config.reshade.require_fg_pacing_fix);
 
+  mcp_cfg.enabled->store                      (config.mcp.enabled);
+  mcp_cfg.port->store                         (config.mcp.port);
+  mcp_cfg.bind_address->store                 (config.mcp.bind_address);
+  mcp_cfg.token->store                        (config.mcp.token);
+
   if (SK_ReShade_HasRenoDX ())
   {
     reshade_cfg.unsafe_addons->store          (config.reshade.allow_unsafe_addons);
@@ -8093,6 +8121,7 @@ SK_SaveConfig ( std::wstring name,
   if (platform_ini) platform_ini->write ();
   if (   macro_ini)    macro_ini->write ();
   if (  notify_ini)   notify_ini->write ();
+  if (     mcp_ini)      mcp_ini->write ();
 
 
 

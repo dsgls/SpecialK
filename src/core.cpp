@@ -42,6 +42,7 @@
 #include <SpecialK/storefront/gog.h>
 #include <SpecialK/storefront/xbox.h>
 #include <SpecialK/control_panel/platform.h>
+#include <SpecialK/mcp/server.h>
 
 #include <SpecialK/nvapi.h>
 #include <nvapi/NvApiDriverSettings.h>
@@ -668,6 +669,8 @@ extern void BasicInit (void);
     } break;
 #endif
   }
+
+  SK_MCP_Init ();
 
   // Setup the compatibility back end, which monitors loaded libraries,
   //   blacklists bad DLLs and detects render APIs...
@@ -3064,6 +3067,8 @@ SK_ShutdownCore (const wchar_t* backend)
 
   if (        __SK_DLL_TeardownEvent != nullptr)
     SetEvent (__SK_DLL_TeardownEvent);
+
+  SK_MCP_Shutdown ();
 
   // Fast path for DLLs that were never really attached.
   if (! __SK_DLL_AttachTime)

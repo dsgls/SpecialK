@@ -106,6 +106,12 @@
     <Filter Include="Source Files\Control Panel">
       <UniqueIdentifier>{d4c169c2-1d29-434c-aeb1-f506299a9b73}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\MCP">
+      <UniqueIdentifier>{d4d5f0f0-4e2d-44d7-bfaf-c0dbd7e63c6e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\MCP">
+      <UniqueIdentifier>{a165f65e-6e25-4602-a572-ed83c7e9b834}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source Files\Stats">
       <UniqueIdentifier>{3875728f-4125-4054-8f97-91f239a011e9}</UniqueIdentifier>
     </Filter>
@@ -758,6 +764,15 @@
     </ClInclude>
     <ClInclude Include="include\SpecialK\control_panel\plugins.h">
       <Filter>Header Files\Control Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="include\SpecialK\control_panel\mcp.h">
+      <Filter>Header Files\Control Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="include\SpecialK\mcp\server.h">
+      <Filter>Header Files\MCP</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mcp\tools.h">
+      <Filter>Header Files\MCP</Filter>
     </ClInclude>
     <ClInclude Include="include\SpecialK\control_panel\osd.h">
       <Filter>Header Files\Control Panel</Filter>
@@ -3487,6 +3502,15 @@
     </ClCompile>
     <ClCompile Include="src\control_panel\cfg_plugins.cpp">
       <Filter>Source Files\Control Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="src\control_panel\cfg_mcp.cpp">
+      <Filter>Source Files\Control Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mcp\server.cpp">
+      <Filter>Source Files\MCP</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mcp\tools_process.cpp">
+      <Filter>Source Files\MCP</Filter>
     </ClCompile>
     <ClCompile Include="src\control_panel\cfg_sound.cpp">
       <Filter>Source Files\Control Panel</Filter>

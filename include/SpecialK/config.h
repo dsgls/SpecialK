@@ -589,6 +589,13 @@ struct sk_config_t
     };
   } reshade;
 
+  struct mcp_s {
+    bool         enabled      = false;
+    int          port         = 27772;
+    std::wstring bind_address = L"127.0.0.1";
+    std::wstring token        = L"";
+  } mcp;
+
   struct sound_s {
     SK_ConfigSerializedKeybind
          game_mute_keybind = {

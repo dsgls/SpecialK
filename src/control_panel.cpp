@@ -36,6 +36,7 @@
 #include <SpecialK/control_panel/d3d9.h>
 //#include <SpecialK/control_panel/d3d12.h>
 #include <SpecialK/control_panel/input.h>
+#include <SpecialK/control_panel/mcp.h>
 #include <SpecialK/control_panel/opengl.h>
 #include <SpecialK/control_panel/osd.h>
 #include <SpecialK/control_panel/notifications.h>
@@ -7944,6 +7945,7 @@ static constexpr uint32_t UPLAY_OVERLAY_PS_CRC32C  { 0x35ae281c };
   }
 
   SK::ControlPanel::PlugIns::Draw  ();
+  SK::ControlPanel::MCP::Draw      ();
   SK::ControlPanel::Platform::Draw ();
 
   SK_ImGui::BatteryMeter ();
