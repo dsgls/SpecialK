@@ -7669,6 +7669,7 @@ static constexpr uint32_t UPLAY_OVERLAY_PS_CRC32C  { 0x35ae281c };
     bool hdr           = SK_ImGui_Widgets->hdr_control->isVisible     ();
     bool tobii         = SK_ImGui_Widgets->tobii->isVisible           ();
     bool achievements  = SK_ImGui_Widgets->achieve_tracker->isVisible ();
+    bool mcpchat       = SK_ImGui_Widgets->mcp_chat->isVisible        ();
 
     ImGui::TreePush ("###WidgetSelector");
 
@@ -7716,6 +7717,21 @@ static constexpr uint32_t UPLAY_OVERLAY_PS_CRC32C  { 0x35ae281c };
         " Achievements section of the control panel."
       );
     }
+
+    ImGui::SameLine ();
+
+    if (ImGui::Checkbox ("MCP Chat", &mcpchat))
+    {
+      SK_ImGui_Widgets->mcp_chat->setVisible (mcpchat).
+                                  setActive  (mcpchat);
+    }
+
+    ImGui::SetItemTooltip (
+      "Chat with the Claude Code session connected through the Special K MCP"
+      " server. While visible the widget takes the mouse under it; while the"
+      " input line has focus the game does not see the keyboard. Right-click"
+      " opens the widget settings."
+    );
 
     if ( (int)render_api & (int)SK_RenderAPI::D3D11 ||
          (int)render_api & (int)SK_RenderAPI::D3D12 )
@@ -8559,7 +8575,8 @@ SK_ImGui_StageNextFrame (void)
                 SK_ImGui_Widgets->hdr_control,
                   SK_ImGui_Widgets->tobii,
                     SK_ImGui_Widgets->latency,
-                      SK_ImGui_Widgets->achieve_tracker
+                      SK_ImGui_Widgets->achieve_tracker,
+                        SK_ImGui_Widgets->mcp_chat
   };
 
   // Default action is to draw the Special K Control panel,

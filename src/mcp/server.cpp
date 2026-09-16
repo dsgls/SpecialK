@@ -964,6 +964,8 @@ SK_MCP_DropChannel (SK_MCP_Client& client)
   client.channel = false;
 
   SK_LOG0 ( ( L"Channel client %llu disconnected", client.id ), SK_MCP_LOG_SRC );
+
+  SK_MCP_Chat_OnServerEvent ("client disconnected");
 }
 
 // The live channel client, if any.  A holder that died earlier in this
@@ -1007,6 +1009,8 @@ SK_MCP_TakeChannel (SK_MCP_Client& client)
   client.channel = true;
 
   SK_LOG0 ( ( L"Client %llu holds the channel", client.id ), SK_MCP_LOG_SRC );
+
+  SK_MCP_Chat_OnServerEvent ("client connected");
 }
 
 static void
@@ -1702,6 +1706,8 @@ SK_MCP_ListenerThread (LPVOID)
 
   SK_LOG0 ( ( L"MCP server stopped" ), SK_MCP_LOG_SRC );
 
+  SK_MCP_Chat_OnServerEvent ("server stopped");
+
   return 0;
 }
 
@@ -1960,6 +1966,8 @@ SK_MCP_Start (void)
   SK_LOG0 ( ( L"MCP server listening on %ws:%d", config.mcp.bind_address.c_str (),
                                                  config.mcp.port ), SK_MCP_LOG_SRC );
 
+  SK_MCP_Chat_OnServerEvent ("server started");
+
   return true;
 }
 
@@ -2033,6 +2041,7 @@ SK_MCP_Init (void)
   SK_MCP_RegisterSymbolTools  ();
   SK_MCP_RegisterScanTools    ();
   SK_MCP_RegisterExecTools    ();
+  SK_MCP_RegisterChatTools    ();
 
   if (config.mcp.enabled)
     SK_MCP_Start ();

@@ -137,6 +137,10 @@
 
 26.9.15
 =======
+ + Added an MCP server (off by default, [MCP.Server] in the game's INI)
+     that exposes the game process to Claude Code through the Special K
+     MCP bridge, with memory, symbol, scan and call tools and an in-game
+     chat widget.
  + Adjusted MinHook spinlock code.
  + No longer expand Framerate Limiter|Advanced|Energy Efficiency by default.
  + Fixed issues with XInput Bridge DLL (XInput1_3.dll).

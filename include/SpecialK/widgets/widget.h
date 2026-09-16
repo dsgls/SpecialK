@@ -58,6 +58,7 @@ struct SK_ImGui_WidgetRegistry
   SK_Widget* file_browser    = nullptr;
 
   SK_Widget* achieve_tracker = nullptr;
+  SK_Widget* mcp_chat        = nullptr;
 
   //SK_Widget* texcache;
 

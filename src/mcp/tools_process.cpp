@@ -24,7 +24,6 @@
 #include "tools.h"
 
 #include <algorithm>
-#include <atomic>
 #include <cctype>
 #include <vector>
 
@@ -47,12 +46,19 @@ SK_MCP_ProcessInfo (const json& /*args*/)
 
   GetModuleFileNameW (nullptr, wszPath, MAX_PATH);
 
+  // Unsynchronised by design: the presenting thread owns visible, and a stale
+  //   value is harmless.  Null before the widgets initialise.
+  const bool chat_open =
+    SK_ImGui_Widgets->mcp_chat != nullptr &&
+    SK_ImGui_Widgets->mcp_chat->isVisible ();
+
   return {
     { "pid",        (int)GetCurrentProcessId ()          },
     { "exe",        SK_MCP_ToUTF8 (SK_GetHostApp ())  },
     { "path",       SK_MCP_ToUTF8 (wszPath)           },
     { "bitness",    (int)SK_GetBitness ()                 },
-    { "sk_version", SK_MCP_ToUTF8 (SK_GetVersionStrW ()) }
+    { "sk_version", SK_MCP_ToUTF8 (SK_GetVersionStrW ()) },
+    { "chat_open",  chat_open                             }
   };
 }
 
@@ -112,18 +118,9 @@ SK_MCP_DebugNotify (const json& args)
   const std::string content =
     args.at ("content").get <std::string> ();
 
-  static std::atomic <uint64_t> _seq = 0;
-
-  const uint64_t seq =
-    ++_seq;
-
-  const json params = {
-    { "content", content },
-    { "meta",    { { "seq",  std::to_string (seq)                 },
-                   { "game", SK_MCP_ToUTF8 (SK_GetHostApp ())  } } }
-  };
-
-  SK_MCP_Notify ("notifications/claude/channel", params);
+  // Shares the chat's seq counter and pairing ring, but appends no transcript
+  //   entry and is never paired with a reply.
+  SK_MCP_Chat_Notify (content, true);
 
   return { { "queued", true } };
 }

@@ -908,7 +908,7 @@ SK_ImGui_WidgetRegistry::DispatchKeybinds ( BOOL Control,
     SK_ImGui_Widgets->d3d11_pipeline,
     SK_ImGui_Widgets->thread_profiler, SK_ImGui_Widgets->hdr_control,
     SK_ImGui_Widgets->tobii,           SK_ImGui_Widgets->latency,
-    SK_ImGui_Widgets->achieve_tracker
+    SK_ImGui_Widgets->achieve_tracker, SK_ImGui_Widgets->mcp_chat
   };
 
   for (auto& widget : widgets)
@@ -1268,7 +1268,7 @@ SK_ImGui_WidgetRegistry::SaveConfig (void)
     SK_ImGui_Widgets->d3d11_pipeline,
     SK_ImGui_Widgets->thread_profiler, SK_ImGui_Widgets->hdr_control,
     SK_ImGui_Widgets->tobii,           SK_ImGui_Widgets->latency,
-    SK_ImGui_Widgets->achieve_tracker
+    SK_ImGui_Widgets->achieve_tracker, SK_ImGui_Widgets->mcp_chat
   };
 
   for ( auto& widget : widgets )
@@ -1300,6 +1300,7 @@ extern void SK_Widget_InitGPUMonitor     (void);
 extern void SK_Widget_InitTobii          (void);
 extern void SK_Widget_InitHDR            (void);
 extern void SK_Widget_InitAchieveTracker (void);
+extern void SK_Widget_InitMCPChat        (void);
 
 bool
 SK_Widget_InitEverything (void)
@@ -1319,6 +1320,7 @@ SK_Widget_InitEverything (void)
   SK_Widget_InitTobii          ();
   SK_Widget_InitGPUMonitor     ();
   SK_Widget_InitAchieveTracker ();
+  SK_Widget_InitMCPChat        ();
 
   // Run each widget once to complete their setup
   for ( auto& widget : { SK_ImGui_Widgets->frame_pacing,
@@ -1330,7 +1332,8 @@ SK_Widget_InitEverything (void)
                                         SK_ImGui_Widgets->hdr_control,
                                         SK_ImGui_Widgets->tobii,
                                         SK_ImGui_Widgets->latency,
-                                        SK_ImGui_Widgets->achieve_tracker } )
+                                        SK_ImGui_Widgets->achieve_tracker,
+                                        SK_ImGui_Widgets->mcp_chat } )
   {
     if (widget != nullptr)
         widget->run_base ();

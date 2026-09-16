@@ -768,6 +768,9 @@
     <ClInclude Include="include\SpecialK\control_panel\mcp.h">
       <Filter>Header Files\Control Panel</Filter>
     </ClInclude>
+    <ClInclude Include="include\SpecialK\mcp\chat.h">
+      <Filter>Header Files\MCP</Filter>
+    </ClInclude>
     <ClInclude Include="include\SpecialK\mcp\server.h">
       <Filter>Header Files\MCP</Filter>
     </ClInclude>
@@ -3530,6 +3533,9 @@
     <ClCompile Include="src\mcp\tools_exec.cpp">
       <Filter>Source Files\MCP</Filter>
     </ClCompile>
+    <ClCompile Include="src\mcp\chat.cpp">
+      <Filter>Source Files\MCP</Filter>
+    </ClCompile>
     <ClCompile Include="src\control_panel\cfg_sound.cpp">
       <Filter>Source Files\Control Panel</Filter>
     </ClCompile>
@@ -4026,6 +4032,9 @@
       <Filter>Source Files\Core</Filter>
     </ClCompile>
     <ClCompile Include="src\widgets\achievement_tracker.cpp">
+      <Filter>Source Files\Widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="src\widgets\mcp_chat.cpp">
       <Filter>Source Files\Widgets</Filter>
     </ClCompile>
     <ClCompile Include="src\control_panel\cfg_galaxy.cpp">

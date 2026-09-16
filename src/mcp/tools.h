@@ -27,6 +27,7 @@
 //   Private to src/mcp; it is not installed under include/.
 //
 
+#include <SpecialK/mcp/chat.h>
 #include <SpecialK/mcp/server.h>
 
 #include <cstdint>
@@ -74,6 +75,8 @@ void SK_MCP_RegisterSymbolTools  (void);
 void SK_MCP_RegisterScanTools    (void);
 // src/mcp/tools_exec.cpp
 void SK_MCP_RegisterExecTools    (void);
+// src/mcp/chat.cpp
+void SK_MCP_RegisterChatTools    (void);
 
 void SK_MCP_Notify               (const char* method, const nlohmann::json& params);
 
@@ -215,5 +218,29 @@ std::vector <uint8_t> SK_MCP_HexToBytes (const std::string& hex);
 nlohmann::json
 SK_MCP_RunOnRenderThread ( std::function <nlohmann::json (void)> fn,
                            DWORD                                 timeout_ms );
+
+
+//
+// Chat transcript: src/mcp/chat.cpp
+//
+//   The reader half the MCP Chat widget uses is public, in
+//     <SpecialK/mcp/chat.h>; the writer half is here.  The transcript lock is
+//     held only around container access, never across SK_MCP_Notify.
+//
+
+// Appends a claude / note / system entry.  seq is the user seq a claude entry
+//   answers, else 0.
+void     SK_MCP_Chat_Append      ( SK_MCP_ChatRole    role,
+                                   const std::string& text,
+                                   uint64_t           seq = 0 );
+
+// Allocates a seq, records it in the reply pairing ring and pushes the channel
+//   notification carrying text.  debug marks an sk_debug_notify seq, which
+//   carries no transcript entry and is never paired or warned about.
+uint64_t SK_MCP_Chat_Notify      (const std::string& text, bool debug = false);
+
+// Appends a System entry.  Called by server.cpp where it logs the event, never
+//   while the notification-queue lock is held.
+void     SK_MCP_Chat_OnServerEvent (const char* what);
 
 #endif /* __SK__MCP_TOOLS_H__ */
