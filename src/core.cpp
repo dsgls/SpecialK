@@ -2537,6 +2537,10 @@ SK_StartupCore (const wchar_t* backend, void* callback)
 
       case SK_GAME_ID::EldenRing:
         break;
+
+      case SK_GAME_ID::OuterWorlds2:
+        SK_OW2_InitPlugin ();
+        break;
 #endif
     }
 

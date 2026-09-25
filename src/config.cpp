@@ -345,7 +345,8 @@ SK_GetCurrentGameID (void) noexcept
           { L"Dispatch-Win64-Shipping.exe",            SK_GAME_ID::Dispatch                     },
           { L"DispatchEGS-Win64-Shipping.exe",         SK_GAME_ID::Dispatch                     },
           { L"Timberborn.exe",                         SK_GAME_ID::Timberborn                   },
-          { L"DXHRDC.exe",                             SK_GAME_ID::DeusEx_HumanRevolution_DC    }
+          { L"DXHRDC.exe",                             SK_GAME_ID::DeusEx_HumanRevolution_DC    },
+          { L"TheOuterWorlds2-Win64-Shipping.exe",     SK_GAME_ID::OuterWorlds2                 }
         };
 
     first_check  = false;

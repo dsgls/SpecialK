@@ -1804,6 +1804,7 @@ if exist "$(TargetDir)$(TargetName).exp" ( del "$(TargetDir)$(TargetName).exp" )
     <ClInclude Include="include\SpecialK\osd\popup.h" />
     <ClInclude Include="include\SpecialK\osd\text.h" />
     <ClInclude Include="include\SpecialK\parameter.h" />
+    <ClInclude Include="include\SpecialK\plugin\pattern_scan.h" />
     <ClInclude Include="include\SpecialK\plugin\plugin_mgr.h" />
     <ClInclude Include="include\SpecialK\plugin\reshade.h" />
     <ClInclude Include="include\SpecialK\render\d3d9\d3d9_device.h" />
@@ -2065,6 +2066,8 @@ if exist "$(TargetDir)$(TargetName).exp" ( del "$(TargetDir)$(TargetName).exp" )
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release (clang)|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\plugins\dxhr.cpp" />
+    <ClCompile Include="src\plugins\outer_worlds2.cpp" />
+    <ClCompile Include="src\plugins\pattern_scan.cpp" />
     <ClCompile Include="src\plugins\persona4.cpp" />
     <ClCompile Include="src\plugins\secret_of_mana.cpp" />
     <ClCompile Include="src\plugins\sekiro.cpp">

@@ -561,6 +561,9 @@
     <ClInclude Include="include\SpecialK\plugin\plugin_mgr.h">
       <Filter>Header Files\Plugins</Filter>
     </ClInclude>
+    <ClInclude Include="include\SpecialK\plugin\pattern_scan.h">
+      <Filter>Header Files\Plugins</Filter>
+    </ClInclude>
     <ClInclude Include="include\SpecialK\widgets\widget.h">
       <Filter>Header Files\ImGui\Widgets</Filter>
     </ClInclude>
@@ -3738,6 +3741,12 @@
       <Filter>Source Files\Storefronts\Steam\Wrapper</Filter>
     </ClCompile>
     <ClCompile Include="src\plugins\dxhr.cpp">
+      <Filter>Source Files\Plugins</Filter>
+    </ClCompile>
+    <ClCompile Include="src\plugins\outer_worlds2.cpp">
+      <Filter>Source Files\Plugins</Filter>
+    </ClCompile>
+    <ClCompile Include="src\plugins\pattern_scan.cpp">
       <Filter>Source Files\Plugins</Filter>
     </ClCompile>
     <ClCompile Include="src\plugins\persona4.cpp">

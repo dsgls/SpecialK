@@ -264,6 +264,12 @@ void           SK_DXHR_InitPlugin (void);
 void __stdcall SK_DXHR_EndFrame   (void);
 bool           SK_DXHR_PlugInCfg  (void);
 
+#ifdef _M_AMD64
+void           SK_OW2_InitPlugin  (void);
+void __stdcall SK_OW2_EndFrame    (void);
+bool           SK_OW2_PlugInCfg   (void);
+#endif
+
 extern void SK_SEH_LaunchEldenRing         ( const wchar_t* = L"eldenring.exe" );
 extern void SK_SEH_LaunchArmoredCoreVI     (void);
 extern void SK_SEH_LaunchLordsOfTheFallen2 (void);

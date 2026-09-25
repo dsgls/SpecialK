@@ -2002,6 +2002,7 @@ enum class SK_GAME_ID
   Dispatch,                     // Dispatch-Win64-Shipping.exe, DispatchEGS-Win64-Shipping.exe
   Timberborn,                   // Timberborn.exe
   DeusEx_HumanRevolution_DC,    // DXHRDC.exe
+  OuterWorlds2,                 // TheOuterWorlds2-Win64-Shipping.exe
 
   UNKNOWN_GAME               = 0xffff
 };
