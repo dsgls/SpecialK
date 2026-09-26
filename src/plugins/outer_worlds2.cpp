@@ -42,6 +42,16 @@ static constexpr uintptr_t SK_OW2_GUS_ControllerADSSens   = 0x310;
 static constexpr uintptr_t SK_OW2_GameInstance_SaveMgr          = 0x2d8;
 static constexpr uintptr_t SK_OW2_SaveMgr_MaxOverwriteableSaves = 0xb18;
 
+// UGameInstance -> ULocalPlayer [0] -> APlayerController -> pawn ->
+// UPlayerInfoComponent field offsets.
+static constexpr uintptr_t SK_OW2_GameInstance_LocalPlayers = 0x38; // TArray<ULocalPlayer*>
+static constexpr uintptr_t SK_OW2_LocalPlayer_Controller    = 0x30;
+static constexpr uintptr_t SK_OW2_Controller_Pawn           = 0x368;
+static constexpr uintptr_t SK_OW2_Pawn_Controller           = 0x360;
+static constexpr uintptr_t SK_OW2_Pawn_PlayerInfo           = 0xf80;
+static constexpr uintptr_t SK_OW2_UObject_Class             = 0x10;
+static constexpr uintptr_t SK_OW2_PlayerInfo_SkillPoints    = 0x940; // Unspent, int32; saved with the game
+
 using SK_OW2_SetSensitivity_pfn = void (*)(void *gus, float value);
 
 // FVector2D* (UPlayerMovementComponent *mc, FVector2D *out, const FVector2D *stick, float dt);
@@ -57,6 +67,7 @@ enum SK_OW2_PatternId {
   SK_OW2_Pat_SetControllerADSSens,
   SK_OW2_Pat_L1,
   SK_OW2_Pat_B1,
+  SK_OW2_Pat_PlayerInfoClass,
 
   // Searched only in [B1 match, B1 match + SK_OW2_B1_Window).
   SK_OW2_Pat_B2,
@@ -81,6 +92,8 @@ static constexpr struct {
   { "SetControllerADSSensitivity", "48 83 EC 28 0F 2E 89 10 03 00 00 0F 85"                                                                                                   },
   { "L1",                          "66 0F 51 C1 66 0F 5A F0 0F 2F 75 00 73 08 0F 57 E4 0F 57 ED EB 78"                                                                        },
   { "B1",                          "0F 28 D7 F3 0F 7F 81 A0 19 00 00 E8 ?? ?? ?? ?? 48 8D 54 24 20 48 8B CB E8 ?? ?? ?? ?? 48 8D 54 24 20 48 8B CB E8 ?? ?? ?? ?? 48 8B 8B 98 11 00 00" },
+  // UPlayerInfoComponent::StaticClass: registration args (size 0xd20), then mov rax, [class].
+  { "PlayerInfoClass",             "C7 44 24 30 04 00 00 10 C7 44 24 28 08 00 00 00 C7 44 24 20 20 0D 00 00 E8 ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ??"                              },
   { "B2",                          "F3 44 0F 58 E1 72 ?? F3 0F 58 BB 50 19 00 00 F3 0F 10 8B 18 15 00 00"                                                                     },
   { "B4",                          "E8 ?? ?? ?? ?? 48 8B BF 10 1E 00 00 44 0F 28 D0"                                                                                          },
   { "S",                           "F3 0F 10 8B 30 15 00 00 F3 44 0F 5C E3 F3 0F 59 9B 84 19 00 00"                                                                           },
@@ -200,6 +213,7 @@ static struct {
   bool           sensitivity_supported = false;
   volatile LONG  bypass_supported      = FALSE; // Cleared by the game thread if a patch batch fails
   bool           save_limit_supported  = false;
+  bool           skill_points_supported = false;
 
   // Bypass state, written only by the game thread (detour); the panel reads
   // bypass_applied with ReadAcquire.
@@ -208,6 +222,7 @@ static struct {
 
   uint8_t      **pGEngine              = nullptr; // UEngine**
   uint8_t      **pGGameInstance        = nullptr; // UGameInstance**
+  uint8_t      **pPlayerInfoClass      = nullptr; // UClass**
   uint8_t       *pProcessLookStick     = nullptr;
 
   SK_OW2_SetSensitivity_pfn
@@ -563,6 +578,9 @@ SK_OW2_ResolveThread (LPVOID)
   if (_Found (SK_OW2_Pat_GGameInstance) != nullptr)
     SK_OW2.pGGameInstance = reinterpret_cast <uint8_t **> (SK_PatternScan_RipTarget (_Found (SK_OW2_Pat_GGameInstance), 3, 7));
 
+  if (_Found (SK_OW2_Pat_PlayerInfoClass) != nullptr)
+    SK_OW2.pPlayerInfoClass = reinterpret_cast <uint8_t **> (SK_PatternScan_RipTarget (_Found (SK_OW2_Pat_PlayerInfoClass) + 0x1d, 3, 7));
+
   SK_OW2.pProcessLookStick =
     const_cast <uint8_t *> (_Found (SK_OW2_Pat_ProcessLookStick));
 
@@ -609,10 +627,13 @@ SK_OW2_ResolveThread (LPVOID)
                 missing_sites.empty () ? "" : "patch sites (" + missing_sites + ")");
   const std::string missing_save =
     _Missing ({ SK_OW2_Pat_GGameInstance });
+  const std::string missing_skill =
+    _Missing ({ SK_OW2_Pat_GGameInstance, SK_OW2_Pat_PlayerInfoClass });
 
-  SK_OW2.sensitivity_supported = missing_sens.empty   ();
-  SK_OW2.bypass_supported      = missing_bypass.empty ();
-  SK_OW2.save_limit_supported  = missing_save.empty   ();
+  SK_OW2.sensitivity_supported  = missing_sens.empty   ();
+  SK_OW2.bypass_supported       = missing_bypass.empty ();
+  SK_OW2.save_limit_supported   = missing_save.empty   ();
+  SK_OW2.skill_points_supported = missing_skill.empty  ();
 
   if (! SK_OW2.sensitivity_supported)
   {
@@ -629,6 +650,12 @@ SK_OW2_ResolveThread (LPVOID)
   if (! SK_OW2.save_limit_supported)
   {
     SK_LOG0 ( (L"Save limit unsupported, missing: %hs", missing_save.c_str ()),
+               L" OW2 " );
+  }
+
+  if (! SK_OW2.skill_points_supported)
+  {
+    SK_LOG0 ( (L"Skill points unsupported, missing: %hs", missing_skill.c_str ()),
                L" OW2 " );
   }
 
@@ -665,11 +692,12 @@ SK_OW2_ResolveThread (LPVOID)
     1000.0 * static_cast <double> (SK_QueryPerf ().QuadPart - start.QuadPart)
            / static_cast <double> (SK_PerfFreq);
 
-  SK_LOG0 ( (L"Resolved in %.1f ms (%.1f MiB .text): sensitivity=%hs, bypass=%hs, save limit=%hs",
+  SK_LOG0 ( (L"Resolved in %.1f ms (%.1f MiB .text): sensitivity=%hs, bypass=%hs, save limit=%hs, skill points=%hs",
                scan_ms, static_cast <double> (text_size) / (1024.0 * 1024.0),
-               SK_OW2.sensitivity_supported ? "yes" : "no",
-               SK_OW2.bypass_supported      ? "yes" : "no",
-               SK_OW2.save_limit_supported  ? "yes" : "no"),
+               SK_OW2.sensitivity_supported  ? "yes" : "no",
+               SK_OW2.bypass_supported       ? "yes" : "no",
+               SK_OW2.save_limit_supported   ? "yes" : "no",
+               SK_OW2.skill_points_supported ? "yes" : "no"),
              L" OW2 " );
 
   WriteRelease (&SK_OW2.resolved, 1);
@@ -802,6 +830,69 @@ SK_OW2_EndFrame (void)
 
     SK_OW2.ini_params.store ();
     config.utility.save_async_if (true);
+  }
+}
+
+static constexpr int SK_OW2_SkillPoints_MaxAdd = 100;
+
+// Render thread only (panel). Adds add (>= 0) to the local player's unspent
+// skill points and returns the result in points. The pawn and its info
+// component are recreated on respawn and level load, so this walks from the
+// game instance on every call, and SEH covers teardown races. The game
+// thread only changes the value on level-up and when spending, so the
+// unsynchronized add is safe in practice. No C++ objects here needing
+// unwinding (C2712).
+static bool
+SK_OW2_AddSkillPoints (int add, int32_t& points)
+{
+  __try
+  {
+    uint8_t *gi = *SK_OW2.pGGameInstance;
+
+    if (gi == nullptr)
+      return false;
+
+    auto *local_players =
+      *reinterpret_cast <uint8_t ***> (gi + SK_OW2_GameInstance_LocalPlayers);
+    const int32_t num_local_players =
+      *reinterpret_cast <int32_t *> (gi + SK_OW2_GameInstance_LocalPlayers + 8);
+
+    if (local_players == nullptr || num_local_players < 1 || local_players [0] == nullptr)
+      return false;
+
+    uint8_t *pc =
+      *reinterpret_cast <uint8_t **> (local_players [0] + SK_OW2_LocalPlayer_Controller);
+
+    if (pc == nullptr)
+      return false;
+
+    uint8_t *pawn =
+      *reinterpret_cast <uint8_t **> (pc + SK_OW2_Controller_Pawn);
+
+    if (pawn == nullptr || *reinterpret_cast <uint8_t **> (pawn + SK_OW2_Pawn_Controller) != pc)
+      return false;
+
+    uint8_t *info =
+      *reinterpret_cast <uint8_t **> (pawn + SK_OW2_Pawn_PlayerInfo);
+
+    if (info == nullptr || *reinterpret_cast <uint8_t **> (info + SK_OW2_UObject_Class) !=
+                           *SK_OW2.pPlayerInfoClass)
+      return false;
+
+    auto *pv =
+      reinterpret_cast <int32_t *> (info + SK_OW2_PlayerInfo_SkillPoints);
+
+    if (add > 0)
+      *pv = static_cast <int32_t> (std::min <int64_t> (static_cast <int64_t> (*pv) + add, INT32_MAX));
+
+    points = *pv;
+
+    return true;
+  }
+
+  __except (EXCEPTION_EXECUTE_HANDLER)
+  {
+    return false;
   }
 }
 
@@ -942,6 +1033,41 @@ SK_OW2_PlugInCfg (void)
     _Tooltip ("Takes effect the next time the save menu opens.");
     ImGui::EndDisabled ();
     _Unavailable (SK_OW2.save_limit_supported);
+
+    // Skill points
+    const bool skill_off =
+      (! resolved) || (! SK_OW2.skill_points_supported);
+
+    static int skill_points_to_add = 1;
+
+    int32_t    skill_points = 0;
+    const bool have_player  =
+      (! skill_off) && SK_OW2_AddSkillPoints (0, skill_points);
+
+    ImGui::BeginDisabled (skill_off);
+    ImGui::SetNextItemWidth (ImGui::GetFontSize () * 6.0f);
+    if (ImGui::InputInt ("Skill points###SK_OW2_SkillPointsToAdd", &skill_points_to_add))
+      skill_points_to_add = std::clamp (skill_points_to_add, 1, SK_OW2_SkillPoints_MaxAdd);
+    ImGui::SameLine ();
+    ImGui::BeginDisabled (! have_player);
+    if (ImGui::Button ("Add###SK_OW2_AddSkillPoints"))
+      SK_OW2_AddSkillPoints (skill_points_to_add, skill_points);
+    ImGui::EndDisabled ();
+    _Tooltip ("Adds unspent skill points to the player character. The game saves them.");
+    ImGui::EndDisabled ();
+
+    if (skill_off)
+      _Unavailable (SK_OW2.skill_points_supported);
+
+    else
+    {
+      ImGui::SameLine ();
+
+      if (have_player)
+        ImGui::TextDisabled ("Unspent: %d", skill_points);
+      else
+        ImGui::TextDisabled ("No player character");
+    }
 
     if (toggled)
     {
