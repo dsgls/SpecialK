@@ -268,6 +268,9 @@ bool           SK_DXHR_PlugInCfg  (void);
 void           SK_OW2_InitPlugin  (void);
 void __stdcall SK_OW2_EndFrame    (void);
 bool           SK_OW2_PlugInCfg   (void);
+
+void           SK_DXMD_InitPlugin (void);
+bool           SK_DXMD_PlugInCfg  (void);
 #endif
 
 extern void SK_SEH_LaunchEldenRing         ( const wchar_t* = L"eldenring.exe" );

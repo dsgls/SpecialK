@@ -2066,6 +2066,7 @@ if exist "$(TargetDir)$(TargetName).exp" ( del "$(TargetDir)$(TargetName).exp" )
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release (clang)|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\plugins\dxhr.cpp" />
+    <ClCompile Include="src\plugins\dxmd.cpp" />
     <ClCompile Include="src\plugins\outer_worlds2.cpp" />
     <ClCompile Include="src\plugins\pattern_scan.cpp" />
     <ClCompile Include="src\plugins\persona4.cpp" />

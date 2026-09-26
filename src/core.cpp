@@ -2541,6 +2541,10 @@ SK_StartupCore (const wchar_t* backend, void* callback)
       case SK_GAME_ID::OuterWorlds2:
         SK_OW2_InitPlugin ();
         break;
+
+      case SK_GAME_ID::DeusEx_MankindDivided:
+        SK_DXMD_InitPlugin ();
+        break;
 #endif
     }
 

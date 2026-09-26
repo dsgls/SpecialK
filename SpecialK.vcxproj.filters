@@ -3743,6 +3743,9 @@
     <ClCompile Include="src\plugins\dxhr.cpp">
       <Filter>Source Files\Plugins</Filter>
     </ClCompile>
+    <ClCompile Include="src\plugins\dxmd.cpp">
+      <Filter>Source Files\Plugins</Filter>
+    </ClCompile>
     <ClCompile Include="src\plugins\outer_worlds2.cpp">
       <Filter>Source Files\Plugins</Filter>
     </ClCompile>

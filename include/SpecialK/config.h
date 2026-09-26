@@ -2003,6 +2003,7 @@ enum class SK_GAME_ID
   Timberborn,                   // Timberborn.exe
   DeusEx_HumanRevolution_DC,    // DXHRDC.exe
   OuterWorlds2,                 // TheOuterWorlds2-Win64-Shipping.exe
+  DeusEx_MankindDivided,        // DXMD.exe, DXMD_real.exe
 
   UNKNOWN_GAME               = 0xffff
 };
