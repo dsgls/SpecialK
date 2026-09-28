@@ -105,6 +105,15 @@ maintainer writes both himself, so the PR must not. The INI keys and the
 DeadzonePercent removal go in the commit message and PR description instead.
 Also noted: the maintainer leaves no written review on PRs; he merges or ignores.
 
+### 28. Controller deadzone is hardware calibration, not a game setting — resolved
+Upstream feedback on the PR: `InputDeadzoneLeft/Right` depend on the pad, like
+display brightness calibration. Resolution 2026-09-28 (applied in both
+`pvpzlnzxoonu` and the PR commit `qqrwtrrrvsuq`): both keys are stored in
+`Global\input.ini` (`input_ini`), with no per-game override. No setting in
+`config.cpp` has one; `Platform.Achievements/SoundFile` moved from `dll_ini` to
+`platform_ini` the same way. `EnableStickShaping` stays per game and still gates the
+global deadzone, so a game with shaping off sees unmodified input.
+
 ## Minors
 
 ### 8. '≈' (U+2248) doesn't render in the UI font — resolved
